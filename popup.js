@@ -35,7 +35,7 @@ async function fetchCanvasTasks(token) {
   const BASE_URL = "https://canvas.ucsc.edu";
 
   try {
-    const response = await fetch(`${BASE_URL}/api/v1/todo`, {
+    const response = await fetch(`${BASE_URL}/api/v1/users/self/todo`, {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
@@ -143,4 +143,3 @@ startBtn.addEventListener("click", () => {
 settingsBtn.addEventListener("click", () => {
   settings.classList.toggle("hidden");
 })
-
