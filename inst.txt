@@ -1,0 +1,9 @@
+Open Chrome and type chrome://extensions/ in the address bar.
+
+In the top right corner, toggle the Developer mode switch to ON.
+
+Click the Load unpacked button that appears in the top left.
+
+Select your study-spirit-ext/project folder.
+
+Refresh Extension: Go back to chrome://extensions/ and click the Rotate Arrow (Update) icon on your extension card.
