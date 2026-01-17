@@ -105,7 +105,7 @@ function updateTimer() {
 
   if (timeLeft > 0) {
     timeLeft--;
-    if (timeLeft % 60 === 0) gainXP(2); // Gain 2 XP every minute
+    if (timeLeft % 60 === 0) gainXP(10); // Gain 2 XP every minute
   } else {
     clearInterval(timerId);
     timerId = null;
