@@ -5,39 +5,46 @@
   </head>
   <body>
     <div class="app-container">
-      <div class="spirit-zone">
-        <div id="spirit" class="slime"></div>
-        <div class="stats">
-          <span id="level">Lvl 1 Spirit</span>
-          <div class="xp-bar"><div id="xp-fill"></div></div>
-        </div>
-      </div>
-
-      <div id="settings-page" class="hidden">
-        <button id="back-btn">← Back</button>
-        <h3>Settings</h3>
-        <p class="text-xs">Paste your Canvas Access Token:</p>
-        <input
-          type="password"
-          id="token-input"
-          placeholder="Paste token here..."
-        />
-        <button id="save-token">Save Token</button>
-      </div>
-
-      <div class="timer-card">
-        <h2 id="timer-display">25:00</h2>
-        <button id="start-btn">Focus Session</button>
-      </div>
-
-      <div class="canvas-feed">
-        <h3>Due Soon (Canvas)</h3>
-        <div id="task-list">
-          <div class="task-item">
-            <span>Loading assignments...</span>
+      
+      <div id="view-city" class="view">
+        <div class="spirit-zone">
+          <div id="spirit" class="slime"></div>
+          <div class="stats">
+            <span id="level">Lvl 1 Spirit</span>
+            <div class="xp-bar"><div id="xp-fill"></div></div>
           </div>
         </div>
+        <div class="city-landscape">
+          <p class="section-label">Your Growing Spirit City</p>
+          <div id="buildings-grid"></div>
+        </div>
       </div>
+
+      <div id="view-timer" class="view hidden">
+        <div class="timer-card">
+          <h2 id="timer-display">25:00</h2>
+          <button id="start-btn">Focus Session</button>
+        </div>
+        <div class="canvas-feed">
+          <h3>Due Soon (Canvas)</h3>
+          <div id="task-list"></div>
+        </div>
+      </div>
+
+      <div id="view-settings" class="view hidden">
+        <div class="timer-card">
+          <h3>Settings</h3>
+          <p style="font-size: 11px; opacity: 0.7;">Canvas Access Token:</p>
+          <input type="password" id="token-input" placeholder="Paste token here..." />
+          <button id="save-token">Save Token</button>
+        </div>
+      </div>
+
+      <nav class="nav-bar">
+        <button class="nav-item active" data-target="view-city">City</button>
+        <button class="nav-item" data-target="view-timer">Tasks</button>
+        <button class="nav-item" data-target="view-settings">Settings</button>
+      </nav>
     </div>
     <script src="popup.js"></script>
   </body>
