@@ -113,7 +113,7 @@ function updateTimer() {
 
 function gainXP(amount) {
   xp += amount;
-  if (xp >= 1) {
+  if (xp >= 100) {
     xp = 0;
     // Trigger a simple level up visual here
     document.getElementById("spirit").style.transform = "scale(1.2)";
