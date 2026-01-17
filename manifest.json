@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "House Spirit: Study Timer",
+  "version": "1.0",
+  "permissions": ["storage", "alarms", "notifications"],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "host_permissions": ["https://*.instructure.com/*", "https://*.edu/*"]
+}
