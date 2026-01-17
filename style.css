@@ -1,0 +1,101 @@
+:root {
+  --bg: #0f172a;
+  --card: #1e293b;
+  --accent: #818cf8;
+  --text: #f8fafc;
+}
+
+body {
+  width: 320px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Segoe UI", sans-serif;
+  margin: 0;
+}
+
+.app-container {
+  padding: 16px;
+}
+
+.spirit-zone {
+  height: 120px;
+  background: linear-gradient(to bottom, #312e81, #1e293b);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.slime {
+  width: 50px;
+  height: 40px;
+  background: var(--accent);
+  border-radius: 50% 50% 20% 20%;
+  box-shadow: 0 0 20px var(--accent);
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%,
+  100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(0.8) translateY(10px);
+  }
+}
+
+.xp-bar {
+  width: 100px;
+  height: 6px;
+  background: #334155;
+  border-radius: 10px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+
+#xp-fill {
+  width: 30%;
+  height: 100%;
+  background: #4ade80;
+}
+
+.timer-card {
+  background: var(--card);
+  padding: 15px;
+  border-radius: 16px;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+#timer-display {
+  font-size: 2rem;
+  margin: 0;
+  font-weight: 800;
+}
+
+button {
+  background: var(--accent);
+  border: none;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.canvas-feed h3 {
+  font-size: 0.8rem;
+  opacity: 0.6;
+  text-transform: uppercase;
+}
+.task-item {
+  background: #334155;
+  padding: 8px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  margin-bottom: 6px;
+}
