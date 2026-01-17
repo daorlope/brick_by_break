@@ -11,6 +11,9 @@ const taskList = document.getElementById("task-list");
 const tokenInput = document.getElementById("token-input");
 const saveBtn = document.getElementById("save-token");
 
+const settingsBtn = document.getElementById("settings-btn");
+const settings = document.getElementById("settings-page");
+
 // --- INITIALIZATION ---
 function initializeApp() {
   chrome.storage.local.get(["canvasToken"], (result) => {
@@ -135,3 +138,9 @@ startBtn.addEventListener("click", () => {
     startBtn.textContent = "Pause";
   }
 });
+
+// --- BUTTON MANGEMENT ---
+settingsBtn.addEventListener("click", () => {
+  settings.classList.toggle("hidden");
+})
+
