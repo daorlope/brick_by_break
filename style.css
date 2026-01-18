@@ -209,6 +209,17 @@ button {
   font-weight: bold;
   cursor: pointer;
   margin-top: 10px;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+button:hover {
+  box-shadow: 0 0 0 2px #94a3b8;
+  transform: translateY(-1px);
+}
+
+button:focus-visible {
+  outline: 2px solid #94a3b8;
+  outline-offset: 2px;
 }
 
 .text-xs {

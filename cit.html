@@ -20,8 +20,17 @@
     button, select{
       background:var(--btn);border:1px solid var(--line);color:var(--text);
       padding:8px 10px;border-radius:10px;cursor:pointer;font-weight:650;
+      transition: box-shadow 0.2s ease, transform 0.2s ease, background 0.2s ease;
     }
-    button:hover{background:var(--btn2)}
+    button:hover{
+      background:var(--btn2);
+      box-shadow: 0 0 0 2px #94a3b8;
+      transform: translateY(-1px);
+    }
+    button:focus-visible{
+      outline: 2px solid #94a3b8;
+      outline-offset: 2px;
+    }
     button.danger{background:rgba(122,35,51,.4);border-color:rgba(122,35,51,.8)}
     button.danger:hover{background:rgba(122,35,51,.55)}
     .stat{display:flex;justify-content:space-between;gap:10px;padding:8px 10px;border-radius:12px;background:rgba(15,23,48,.75);border:1px solid var(--line);margin:8px 0}
@@ -44,6 +53,8 @@
   <div class="topbar">
     <span class="pill">Paint tiles + simulate growth</span>
     <span class="pill">Tip: roads connect zones</span>
+    <span class="pill" id="city-level">City Level 1</span>
+    <span class="pill" id="city-xp">XP 0</span>
   </div>
 </header>
 
@@ -63,6 +74,7 @@
       <button id="step">⏭ Step</button>
       <button id="reset" class="danger">↺ Reset</button>
     </div>
+    <div class="help" id="unlock-note"></div>
 
     <h2 style="margin-top:14px;">City Stats</h2>
     <div class="stat"><span>Day</span><b id="day">0</b></div>

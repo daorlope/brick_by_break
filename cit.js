@@ -33,7 +33,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // dev levels for each tile (0..3); only meaningful for zones
   const dev  = Array.from({length:N}, () => Array(N).fill(0));
 
-  let money = 5000;
+  const BASE_MONEY = 5000;
+  let money = BASE_MONEY;
   let day = 0;
   let running = false;
   let timer = null;
@@ -43,6 +44,11 @@ document.addEventListener("DOMContentLoaded", () => {
   let jobs = 0;
   let pollution = 0;
   let happiness = 50;
+  let playerLevel = 1;
+  let playerXp = 0;
+  let growthBonus = 1;
+  let taxBonus = 1;
+  let buildDiscount = 1;
 
   // ----- DOM -----
   const canvas = document.getElementById("c");
@@ -56,6 +62,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const runBtn = document.getElementById("run");
   const stepBtn = document.getElementById("step");
   const resetBtn = document.getElementById("reset");
+  const unlockNoteEl = document.getElementById("unlock-note");
 
   const dayEl = document.getElementById("day");
   const moneyEl = document.getElementById("money");
@@ -63,8 +70,18 @@ document.addEventListener("DOMContentLoaded", () => {
   const jobsEl = document.getElementById("jobs");
   const happyEl = document.getElementById("happy");
   const polluteEl = document.getElementById("pollute");
+  const levelEl = document.getElementById("city-level");
+  const xpEl = document.getElementById("city-xp");
 
   const fmtMoney = (x) => "$" + Math.round(x).toLocaleString();
+  const TOOL_UNLOCKS = {
+    road: 1,
+    res: 1,
+    park: 2,
+    com: 3,
+    ind: 4,
+    empty: 1,
+  };
 
   // ----- Helpers -----
   const inBounds = (x,y) => x>=0 && y>=0 && x<N && y<N;
@@ -82,6 +99,32 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function toolToTile(v){
     return TILE[v] ?? TILE.road;
+  }
+
+  function updateToolOptions(){
+    if (!toolSel) return;
+    const locked = [];
+    Array.from(toolSel.options).forEach((option) => {
+      if (!option.dataset.label) option.dataset.label = option.textContent;
+      const unlockLevel = TOOL_UNLOCKS[option.value] || 1;
+      const isLocked = playerLevel < unlockLevel;
+      option.disabled = isLocked;
+      option.textContent = isLocked
+        ? `${option.dataset.label} (Lvl ${unlockLevel})`
+        : option.dataset.label;
+      if (isLocked) locked.push(`${option.dataset.label} (Lvl ${unlockLevel})`);
+    });
+
+    if (toolSel.selectedOptions.length && toolSel.selectedOptions[0].disabled) {
+      toolSel.value = "road";
+    }
+
+    if (unlockNoteEl) {
+      unlockNoteEl.textContent =
+        locked.length > 0
+          ? `Locked: ${locked.join(", ")}`
+          : "All tools unlocked.";
+    }
   }
 
   function draw(){
@@ -226,8 +269,10 @@ document.addEventListener("DOMContentLoaded", () => {
           const score = nearbyJobsScore(x,y);
           const { bonus } = parkBonus(x,y);
           const want = score + bonus*2;
-          const growChance = Math.min(0.55, 0.08 + want/80) * (happiness/70);
-          const decayChance = Math.max(0, 0.12 - happiness/140);
+          const growChance =
+            Math.min(0.55, 0.08 + want / 80) * (happiness / 70) * growthBonus;
+          const decayChance =
+            Math.max(0, 0.12 - happiness / 140) * (2 - growthBonus);
 
           if(dev[y][x] < 3 && Math.random() < growChance) dev[y][x]++;
           else if(dev[y][x] > 0 && Math.random() < decayChance) dev[y][x]--;
@@ -239,16 +284,22 @@ document.addEventListener("DOMContentLoaded", () => {
           for(const [a,b] of neigh8(x,y)){
             if(grid[b][a]===TILE.res) nearbyPop += CAP[TILE.res][dev[b][a]];
           }
-          const growChance = Math.min(0.5, 0.06 + nearbyPop/250) * (happiness/80);
-          const decayChance = Math.max(0, 0.10 - happiness/160);
+          const growChance =
+            Math.min(0.5, 0.06 + nearbyPop / 250) *
+            (happiness / 80) *
+            growthBonus;
+          const decayChance =
+            Math.max(0, 0.10 - happiness / 160) * (2 - growthBonus);
           if(dev[y][x] < 3 && Math.random() < growChance) dev[y][x]++;
           else if(dev[y][x] > 0 && Math.random() < decayChance) dev[y][x]--;
         }
 
         if(t===TILE.ind){
           const recomputedUnemp = Math.max(0, population - jobs);
-          const growChance = Math.min(0.45, 0.08 + recomputedUnemp/400);
-          const decayChance = 0.07 + Math.min(0.12, pollution/250);
+          const growChance =
+            Math.min(0.45, 0.08 + recomputedUnemp / 400) * growthBonus;
+          const decayChance =
+            (0.07 + Math.min(0.12, pollution / 250)) * (2 - growthBonus);
           if(dev[y][x] < 3 && Math.random() < growChance) dev[y][x]++;
           else if(dev[y][x] > 0 && Math.random() < decayChance) dev[y][x]--;
         }
@@ -258,7 +309,7 @@ document.addEventListener("DOMContentLoaded", () => {
     recomputeStats();
 
     // Money model
-    const taxIncome = population * 0.35 + jobs * 0.25;
+    const taxIncome = (population * 0.35 + jobs * 0.25) * taxBonus;
     const serviceCost = 40 + pollution * 1.15;
     const happinessBonus = (happiness - 50) * 1.0;
     money += taxIncome - serviceCost + happinessBonus;
@@ -290,7 +341,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if(next === TILE.empty && prev !== TILE.empty){
         money += 5;
       } else if(next !== TILE.empty) {
-        const cost = COST[next];
+        const cost = Math.max(1, Math.round(COST[next] * buildDiscount));
         if(money < cost) return;
         money -= cost;
       }
@@ -357,7 +408,7 @@ document.addEventListener("DOMContentLoaded", () => {
         dev[y][x] = 0;
       }
     }
-    money = 5000;
+    money = BASE_MONEY + levelMoneyBonus();
     day = 0;
     running = false;
     runBtn.textContent = "▶ Run";
@@ -366,6 +417,38 @@ document.addEventListener("DOMContentLoaded", () => {
     updateUI();
     draw();
   });
+
+  function levelMoneyBonus(){
+    return Math.max(0, (playerLevel - 1) * 200);
+  }
+
+  function applyPlayerProgress(level, xp){
+    playerLevel = Number.isFinite(level) ? level : 1;
+    playerXp = Number.isFinite(xp) ? xp : 0;
+    const xpProgress = Math.min(1, playerXp / 100);
+    growthBonus = Math.min(1.6, 1 + playerLevel * 0.03 + xpProgress * 0.05);
+    taxBonus = Math.min(1.4, 1 + playerLevel * 0.02 + xpProgress * 0.02);
+    buildDiscount = Math.max(0.7, 1 - playerLevel * 0.01 - xpProgress * 0.01);
+    money = BASE_MONEY + levelMoneyBonus();
+    if (levelEl) levelEl.textContent = `City Level ${playerLevel}`;
+    if (xpEl) xpEl.textContent = `XP ${playerXp}/100`;
+    updateToolOptions();
+    updateUI();
+    draw();
+  }
+
+  if (window.chrome?.storage?.local) {
+    chrome.storage.local.get(["level", "xp"], (result) => {
+      applyPlayerProgress(result.level || 1, result.xp || 0);
+    });
+    chrome.storage.onChanged.addListener((changes) => {
+      if (changes.level || changes.xp) {
+        const nextLevel = changes.level?.newValue ?? playerLevel;
+        const nextXp = changes.xp?.newValue ?? playerXp;
+        applyPlayerProgress(nextLevel, nextXp);
+      }
+    });
+  }
 
   // init
   recomputeStats();
