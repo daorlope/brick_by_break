@@ -4,7 +4,8 @@
   "version": "1.0",
   "permissions": ["storage", "alarms", "notifications"],
   "action": {
-    "default_popup": "popup.html"
+    "default_popup": "popup.html", 
+    "default_icon": "download.png"
   },
   "host_permissions": ["https://*.instructure.com/*", "https://*.edu/*"]
 }
