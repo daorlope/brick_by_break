@@ -18,7 +18,18 @@
       <div id="settings-page" class="hidden">
         <button id="back-btn" class="ghost-btn">Back</button>
         <h3>Settings</h3>
-        <p class="text-xs">Paste your Canvas Access Token:</p>
+        <p class="text-xs">
+          Paste your Canvas Access Token:
+          <span class="info-bubble" tabindex="0" aria-label="Token help">
+            i
+            <span class="tooltip">
+              Login to Canvas dashboard&#10;Click on your account&#10;Click on
+              settings&#10;Scroll down to Approved Integrations&#10;Click + New
+              Access Token&#10;Create a token&#10;Copy and paste the token and
+              insert below
+            </span>
+          </span>
+        </p>
         <input
           type="password"
           id="token-input"
