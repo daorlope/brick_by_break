@@ -122,6 +122,46 @@ button {
   margin: 10px 0 6px;
 }
 
+.info-bubble {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-left: 6px;
+  border-radius: 50%;
+  border: 1px solid #334155;
+  color: #cbd5f5;
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: help;
+}
+
+.info-bubble .tooltip {
+  position: absolute;
+  left: 50%;
+  top: 22px;
+  transform: translateX(-50%);
+  background: #0b1220;
+  color: var(--text);
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 0.7rem;
+  line-height: 1.2;
+  width: 210px;
+  white-space: pre-line;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.info-bubble:hover .tooltip,
+.info-bubble:focus-within .tooltip {
+  opacity: 1;
+}
+
 input {
   width: 100%;
   padding: 8px 10px;
