@@ -300,6 +300,7 @@ saveGeminiKeyBtn?.addEventListener("click", () => {
   });
 });
 
+
 saveTimerBtn.addEventListener("click", () => {
   const hours = Number.parseInt(timerHoursInput.value, 10);
   const minutes = Number.parseInt(timerMinutesInput.value, 10);
@@ -503,7 +504,10 @@ async function sendChat() {
   const text = chatInput?.value.trim();
   if (!text) return;
   if (!geminiKey) {
-    appendChatMessage("bot", "Add your Gemini API key in Settings first.");
+    appendChatMessage(
+      "bot",
+      "Add your Gemini API key in Settings first.",
+    );
     return;
   }
 
@@ -533,41 +537,20 @@ async function sendChat() {
 
   chatSend.disabled = true;
   try {
-    const models = [
-      "gemini-3-flash-preview",
-      "gemini-1.5-flash-latest",
-      "gemini-1.5-flash",
-      "gemini-1.5-pro-latest",
-      "gemini-1.5-pro",
-      "gemini-pro",
-    ];
-    let data = null;
+    let reply = null;
     let lastError = null;
 
-    for (const model of models) {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ contents }),
-        },
-      );
-      if (!response.ok) {
-        const errorBody = await response.text();
-        lastError = errorBody || `Gemini request failed for ${model}`;
-        continue;
+    if (geminiKey) {
+      try {
+        reply = await fetchGeminiReply(contents);
+      } catch (error) {
+        lastError = error;
       }
-      data = await response.json();
-      break;
     }
 
-    if (!data) {
-      throw new Error(lastError || "Gemini request failed");
+    if (!reply) {
+      throw lastError || new Error("No AI provider succeeded.");
     }
-    const reply =
-      data.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "I could not generate a response.";
 
     chatHistory.push({ role: "user", text });
     chatHistory.push({ role: "model", text: reply });
@@ -577,11 +560,33 @@ async function sendChat() {
       typeof error?.message === "string" && error.message.trim()
         ? error.message.slice(0, 200)
         : "Something went wrong. Try again.";
-    appendChatMessage("bot", `Gemini error: ${message}`);
+    appendChatMessage("bot", `AI error: ${message}`);
   } finally {
     chatSend.disabled = false;
   }
 }
+
+async function fetchGeminiReply(contents) {
+  const model = "gemini-3-flash-preview";
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contents }),
+    },
+  );
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(errorBody || "Gemini request failed");
+  }
+  const data = await response.json();
+  return (
+    data.candidates?.[0]?.content?.parts?.[0]?.text ||
+    "I could not generate a response."
+  );
+}
+
 
 function sanitizeTwoDigitsInput(input) {
   const digits = input.value.replace(/\D/g, "").slice(0, 2);

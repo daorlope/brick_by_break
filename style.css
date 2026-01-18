@@ -33,6 +33,7 @@ body {
 .top-actions a {
   display: flex;
   flex: 1;
+  text-decoration: none;
 }
 
 .top-actions a button {
