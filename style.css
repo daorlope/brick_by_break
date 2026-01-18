@@ -103,3 +103,13 @@ button {
 .hidden {
   display: none;
 }
+
+.city-btn {
+  display: inline;
+  margin-left: 2%;
+  margin-right: 2%
+}
+
+.controls {
+  margin-bottom: 2%;
+}

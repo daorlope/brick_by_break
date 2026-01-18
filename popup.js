@@ -11,8 +11,10 @@ const taskList = document.getElementById("task-list");
 const tokenInput = document.getElementById("token-input");
 const saveBtn = document.getElementById("save-token");
 
+const backBtn = document.getElementById("back-btn");
 const settingsBtn = document.getElementById("settings-btn");
 const settings = document.getElementById("settings-page");
+const cityBtn = document.getElementById("city-btn");
 
 // --- INITIALIZATION ---
 function initializeApp() {
@@ -142,4 +144,13 @@ startBtn.addEventListener("click", () => {
 // --- BUTTON MANGEMENT ---
 settingsBtn.addEventListener("click", () => {
   settings.classList.toggle("hidden");
+  settingsBtn.classList.toggle("hidden");
+  cityBtn.classList.toggle("hidden");
+})
+
+backBtn.addEventListener("click", () => {
+  settings.classList.toggle("hidden");
+  settingsBtn.classList.toggle("hidden");
+  cityBtn.classList.toggle("hidden");
+
 })
