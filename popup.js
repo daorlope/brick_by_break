@@ -1,4 +1,6 @@
 // --- STATE VARIABLES ---
+const SHORT_BREAK_SECONDS = 5 * 60;
+const LONG_BREAK_SECONDS = 15 * 60;
 let timerSeconds = 25 * 60;
 let timeLeft = timerSeconds;
 let timerInterval = null;
@@ -7,6 +9,9 @@ let endTime = null;
 let lastXpSecond = null;
 let xp = 0;
 let awardedTaskIds = new Set();
+let sessionType = "focus";
+let sessionId = null;
+let breakActionsBySession = {};
 
 // --- UI ELEMENTS ---
 const display = document.getElementById("timer-display");
@@ -15,6 +20,7 @@ const xpFill = document.getElementById("xp-fill");
 const taskList = document.getElementById("task-list");
 const tokenInput = document.getElementById("token-input");
 const saveBtn = document.getElementById("save-token");
+const restartBtn = document.getElementById("restart-btn");
 const timerHoursInput = document.getElementById("timer-hours-input");
 const timerMinutesInput = document.getElementById("timer-minutes-input");
 const timerSecondsInput = document.getElementById("timer-seconds-input");
@@ -22,6 +28,11 @@ const saveTimerBtn = document.getElementById("save-timer");
 const xpPreview = document.getElementById("xp-preview");
 const xpFloatContainer = document.getElementById("xp-float-container");
 const totalWorkedEl = document.getElementById("total-worked");
+const sessionButtons = document.querySelectorAll(".session-btn");
+const breakPrompt = document.getElementById("break-prompt");
+const breakSuccess = document.querySelector(".break-success");
+const breakButtons = document.querySelectorAll(".break-btn");
+const spiritZone = document.querySelector(".spirit-zone");
 
 const backBtn = document.getElementById("back-btn");
 const settingsBtn = document.getElementById("settings-btn");
@@ -42,6 +53,9 @@ function initializeApp() {
       "totalWorkedSeconds",
       "xp",
       "awardedTaskIds",
+      "sessionType",
+      "sessionId",
+      "breakActionsBySession",
     ],
     (result) => {
       if (result.timerSeconds) {
@@ -50,9 +64,21 @@ function initializeApp() {
         timerSeconds = result.timerMinutes * 60;
       }
 
-      timeLeft = timerSeconds;
+      if (typeof result.sessionType === "string") {
+        sessionType = result.sessionType;
+      }
+      if (typeof result.sessionId === "string") {
+        sessionId = result.sessionId;
+      }
+      if (result.breakActionsBySession) {
+        breakActionsBySession = result.breakActionsBySession;
+      }
+
+      timeLeft = getSessionDuration(sessionType);
       setTimerInputs(timerSeconds);
       updateXpPreview();
+      updateSessionButtons();
+      applyMood();
       if (typeof result.xp === "number") {
         xp = result.xp;
       }
@@ -69,15 +95,18 @@ function initializeApp() {
         endTime = result.endTime;
         syncTimerDisplay();
         startDisplayLoop();
-        startBtn.textContent = "Pause";
+        updateStartButtonLabel();
       } else if (result.remainingSeconds > 0) {
         timeLeft = result.remainingSeconds;
         renderTimerDisplay();
-        startBtn.textContent = "Resume";
+        updateStartButtonLabel();
       } else {
         renderTimerDisplay();
-        startBtn.textContent = "Start Session";
+        updateStartButtonLabel();
       }
+
+      updateSessionButtons();
+      updateBreakPrompt();
 
       // if (result.canvasToken) {
         // If we have a token, fetch real data
@@ -226,13 +255,14 @@ saveTimerBtn.addEventListener("click", () => {
 
   if (totalSeconds > 0) {
     timerSeconds = totalSeconds;
-    timeLeft = timerSeconds;
+    timeLeft = getSessionDuration(sessionType);
     setTimerInputs(timerSeconds);
     stopDisplayLoop();
     timerRunning = false;
     endTime = null;
     lastXpSecond = null;
     renderTimerDisplay();
+    updateStartButtonLabel();
     chrome.storage.local.set(
       { timerSeconds, timerRunning: false, endTime: null, remainingSeconds: null },
       () => {
@@ -255,9 +285,16 @@ function syncTimerDisplay() {
 
   renderTimerDisplay();
 
-  const elapsedSeconds = timerSeconds - timeLeft;
+  const sessionDuration = getSessionDuration(sessionType);
+  const elapsedSeconds = sessionDuration - timeLeft;
 
-  if (timerRunning && timeLeft > 0 && elapsedSeconds > 0 && timeLeft % 10 === 0) {
+  if (
+    sessionType === "focus" &&
+    timerRunning &&
+    timeLeft > 0 &&
+    elapsedSeconds > 0 &&
+    timeLeft % 10 === 0
+  ) {
     if (timeLeft !== lastXpSecond) {
       lastXpSecond = timeLeft;
       gainXP(1); // Gain 1 XP every 10 seconds while open
@@ -268,8 +305,13 @@ function syncTimerDisplay() {
     timerRunning = false;
     endTime = null;
     stopDisplayLoop();
-    startBtn.textContent = "Start Session";
-    alert("Focus Complete! Your Spirit is stronger.");
+    updateStartButtonLabel();
+    updateBreakPrompt();
+    alert(
+      sessionType === "focus"
+        ? "Focus Complete! Your Spirit is stronger."
+        : "Break complete! Ready to focus again?",
+    );
   }
 }
 
@@ -314,6 +356,77 @@ function updateXpPreview() {
   const totalSeconds = safeHours * 3600 + safeMinutes * 60 + safeSeconds;
   const xpGain = Math.floor(totalSeconds / 10) * 1;
   xpPreview.textContent = `Potential XP: ${xpGain}`;
+}
+
+function getSessionDuration(type) {
+  if (type === "short-break") return SHORT_BREAK_SECONDS;
+  if (type === "long-break") return LONG_BREAK_SECONDS;
+  return timerSeconds;
+}
+
+function updateSessionButtons() {
+  sessionButtons.forEach((button) => {
+    button.classList.toggle(
+      "is-active",
+      button.dataset.session === sessionType,
+    );
+    button.disabled = timerRunning;
+  });
+}
+
+function applyMood() {
+  if (!spiritZone) return;
+  spiritZone.classList.remove(
+    "mood-focus",
+    "mood-short-break",
+    "mood-long-break",
+  );
+  const moodClass =
+    sessionType === "short-break"
+      ? "mood-short-break"
+      : sessionType === "long-break"
+        ? "mood-long-break"
+        : "mood-focus";
+  spiritZone.classList.add(moodClass);
+}
+
+function updateBreakPrompt() {
+  if (!breakPrompt) return;
+  const onBreak =
+    timerRunning &&
+    (sessionType === "short-break" || sessionType === "long-break");
+  breakPrompt.classList.toggle("hidden", !onBreak);
+  const actions = (sessionId && breakActionsBySession[sessionId]) || {};
+  const completedCount = ["stretch", "water", "breathe"].filter(
+    (action) => actions[action],
+  ).length;
+  const allComplete = completedCount === 3;
+  breakPrompt.classList.toggle("is-complete", allComplete);
+  if (breakSuccess) {
+    breakSuccess.classList.toggle("hidden", !allComplete);
+  }
+  breakButtons.forEach((button) => {
+    const action = button.dataset.action;
+    const completed = Boolean(actions[action]);
+    button.classList.toggle(
+      "is-complete",
+      completed,
+    );
+    button.disabled = !onBreak || completed;
+  });
+}
+
+function updateStartButtonLabel() {
+  if (timerRunning) {
+    startBtn.textContent = "Pause";
+    return;
+  }
+  if (timeLeft > 0 && timeLeft < getSessionDuration(sessionType)) {
+    startBtn.textContent = "Resume";
+    return;
+  }
+  startBtn.textContent =
+    sessionType === "focus" ? "Start Focus" : "Start Break";
 }
 
 function sanitizeTwoDigitsInput(input) {
@@ -365,16 +478,49 @@ timerSecondsInput.addEventListener("blur", () => {
   updateXpPreview();
 });
 
+sessionButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    if (timerRunning) return;
+    sessionType = button.dataset.session;
+    timeLeft = getSessionDuration(sessionType);
+    endTime = null;
+    lastXpSecond = null;
+    renderTimerDisplay();
+    updateSessionButtons();
+    applyMood();
+    updateBreakPrompt();
+    updateStartButtonLabel();
+    chrome.storage.local.set({ sessionType });
+  });
+});
+
+breakButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    if (!sessionId) return;
+    if (sessionType !== "short-break" && sessionType !== "long-break") return;
+    const action = button.dataset.action;
+    const actions = breakActionsBySession[sessionId] || {};
+    if (actions[action]) return;
+
+    actions[action] = true;
+    breakActionsBySession[sessionId] = actions;
+    gainXP(5);
+    chrome.storage.local.set({ breakActionsBySession });
+    updateBreakPrompt();
+  });
+});
+
 function gainXP(amount) {
   xp += amount;
   if (xp >= 100) {
     xp = 0;
-    // Trigger a simple level up visual here
-    document.getElementById("spirit").style.transform = "scale(1.2)";
-    setTimeout(
-      () => (document.getElementById("spirit").style.transform = "scale(1)"),
-      500,
-    );
+    const city = document.getElementById("city-grid");
+    if (city) {
+      city.style.transform = "scale(1.02)";
+      setTimeout(() => {
+        city.style.transform = "scale(1)";
+      }, 400);
+    }
   }
   xpFill.style.width = `${xp}%`;
   chrome.storage.local.set({ xp });
@@ -415,19 +561,40 @@ startBtn.addEventListener("click", () => {
       timeLeft = response?.remainingSeconds ?? timeLeft;
       renderTimerDisplay();
       stopDisplayLoop();
-      startBtn.textContent = "Resume";
+      updateStartButtonLabel();
+      updateBreakPrompt();
+      updateSessionButtons();
     });
     return;
   }
 
   if (timeLeft <= 0) {
-    timeLeft = timerSeconds;
+    timeLeft = getSessionDuration(sessionType);
   }
 
-  const shouldResume = timeLeft > 0 && timeLeft < timerSeconds;
+  const sessionDuration = getSessionDuration(sessionType);
+  const shouldResume = timeLeft > 0 && timeLeft < sessionDuration;
+  const nextSessionId = sessionId || Date.now().toString();
+  sessionId = nextSessionId;
+  if (!shouldResume && sessionType !== "focus") {
+    breakActionsBySession[sessionId] = {};
+    chrome.storage.local.set({ breakActionsBySession });
+  }
+  chrome.storage.local.set({ sessionType, sessionId: nextSessionId });
+
   const message = shouldResume
-    ? { type: "resumeTimer", remainingSeconds: timeLeft }
-    : { type: "startTimer", durationSeconds: timerSeconds };
+    ? {
+        type: "resumeTimer",
+        remainingSeconds: timeLeft,
+        sessionType,
+        sessionId: nextSessionId,
+      }
+    : {
+        type: "startTimer",
+        durationSeconds: sessionDuration,
+        sessionType,
+        sessionId: nextSessionId,
+      };
 
   chrome.runtime.sendMessage(message, (response) => {
     if (!response) return;
@@ -436,7 +603,26 @@ startBtn.addEventListener("click", () => {
     lastXpSecond = null;
     startDisplayLoop();
     syncTimerDisplay();
-    startBtn.textContent = "Pause";
+    updateStartButtonLabel();
+    updateBreakPrompt();
+    updateSessionButtons();
+  });
+});
+
+restartBtn?.addEventListener("click", () => {
+  stopDisplayLoop();
+  timerRunning = false;
+  endTime = null;
+  lastXpSecond = null;
+  timeLeft = getSessionDuration(sessionType);
+  sessionId = null;
+  renderTimerDisplay();
+  updateStartButtonLabel();
+  updateBreakPrompt();
+  updateSessionButtons();
+  chrome.runtime.sendMessage({ type: "resetTimer" });
+  chrome.storage.local.set({
+    sessionId: null,
   });
 });
 

@@ -17,6 +17,7 @@ function completeTimer() {
           remainingSeconds: 0,
           startTime: null,
           activeDurationSeconds: null,
+          sessionId: null,
           totalWorkedSeconds: totalWorkedSeconds + addSeconds,
         },
         () => {},
@@ -53,7 +54,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "getTimerState") {
     chrome.storage.local.get(
-      ["timerRunning", "endTime", "remainingSeconds"],
+      ["timerRunning", "endTime", "remainingSeconds", "sessionType", "sessionId"],
       (result) => {
         sendResponse(result);
       },
@@ -71,6 +72,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         remainingSeconds: null,
         startTime: Date.now(),
         activeDurationSeconds: durationSeconds,
+        sessionType: message.sessionType || "focus",
+        sessionId: message.sessionId || Date.now().toString(),
       },
       () => {
         scheduleAlarm(endTime);
@@ -90,6 +93,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         remainingSeconds: null,
         startTime: Date.now(),
         activeDurationSeconds: remainingSeconds,
+        sessionType: message.sessionType || "focus",
+        sessionId: message.sessionId || Date.now().toString(),
       },
       () => {
         scheduleAlarm(endTime);
@@ -101,7 +106,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.type === "pauseTimer") {
     chrome.storage.local.get(
-      ["endTime", "startTime", "activeDurationSeconds", "totalWorkedSeconds"],
+      [
+        "endTime",
+        "startTime",
+        "activeDurationSeconds",
+        "totalWorkedSeconds",
+        "sessionType",
+        "sessionId",
+      ],
       (result) => {
         const totalWorkedSeconds = result.totalWorkedSeconds || 0;
         const startTime = result.startTime || Date.now();
@@ -124,6 +136,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             startTime: null,
             activeDurationSeconds: null,
             totalWorkedSeconds: nextTotal,
+            sessionType: result.sessionType || "focus",
+            sessionId: result.sessionId || null,
           },
           () => {
             sendResponse({ timerRunning: false, remainingSeconds });
@@ -144,6 +158,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           remainingSeconds: null,
           startTime: null,
           activeDurationSeconds: null,
+          sessionId: null,
         },
         () => {
           sendResponse({ timerRunning: false, remainingSeconds: null });

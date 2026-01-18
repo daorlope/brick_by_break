@@ -7,16 +7,18 @@
   <body>
     <div class="app-container">
       <div class="spirit-zone main-section">
-        <div id="spirit" class="slime"></div>
+        <div id="city-grid" class="city-grid" aria-label="City"></div>
         <div class="stats">
-          <span id="level">Lvl 1 Spirit</span>
+          <span id="level">Lvl 1 City</span>
           <div class="xp-bar"><div id="xp-fill"></div></div>
         </div>
       </div>
-    </div>
 
-    <div class="controls">
-      <button id="settings-btn" class="ghost-btn main-section">Settings</button>
+      <div class="top-actions main-section">
+        <button id="settings-btn" class="ghost-btn">Settings</button>
+        <a href="city.html"><button id="city-btn">Go to city</button></a>
+      </div>
+
       <div id="settings-page" class="hidden">
         <button id="back-btn" class="ghost-btn">Back</button>
         <h3>Settings</h3>
@@ -25,10 +27,13 @@
           <span class="info-bubble" tabindex="0" aria-label="Token help">
             i
             <span class="tooltip">
-              Login to Canvas dashboard&#10;Click on your account&#10;Click on
-              settings&#10;Scroll down to Approved Integrations&#10;Click + New
-              Access Token&#10;Create a token&#10;Copy and paste the token and
-              insert below
+              <span class="step">1. Login to Canvas dashboard</span>
+              <span class="step">2. Click on your account</span>
+              <span class="step">3. Click on settings</span>
+              <span class="step">4. Scroll down to Approved Integrations</span>
+              <span class="step">5. Click + New Access Token</span>
+              <span class="step">6. Create a token</span>
+              <span class="step">7. Copy and paste the token and insert below</span>
             </span>
           </span>
         </p>
@@ -69,16 +74,31 @@
         </div>
       </div>
 
-      <div class="city-btn">
-      <div class="main-section">
-        <a href="city.html"><button id="city-btn">Go to city</button></a>
-      </div>
-    </div>
-
       <div class="timer-card main-section">
         <h2 id="timer-display">00:25:00</h2>
         <div id="xp-float-container" aria-hidden="true"></div>
+        <div class="session-toggle" role="group" aria-label="Session type">
+          <button class="session-btn is-active" data-session="focus">
+            Focus
+          </button>
+          <button class="session-btn" data-session="short-break">
+            Short break
+          </button>
+          <button class="session-btn" data-session="long-break">
+            Long break
+          </button>
+        </div>
         <button id="start-btn">Focus Session</button>
+        <button id="restart-btn" class="ghost-btn">Restart Timer</button>
+        <div id="break-prompt" class="break-prompt hidden">
+          <div class="break-title">Break action</div>
+          <div class="break-success hidden">Great Job!</div>
+          <div class="break-actions">
+            <button class="break-btn" data-action="stretch">Stretch</button>
+            <button class="break-btn" data-action="water">Water</button>
+            <button class="break-btn" data-action="breathe">Breathe</button>
+          </div>
+        </div>
       </div>
 
       <div class="canvas-feed main-section">
@@ -90,8 +110,6 @@
         </div>
       </div>
     </div>
-  </div>
-  <script src="popup.js"></script>
-</body>
-
+    <script src="popup.js"></script>
+  </body>
 </html>
