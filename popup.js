@@ -26,12 +26,8 @@ const totalWorkedEl = document.getElementById("total-worked");
 const backBtn = document.getElementById("back-btn");
 const settingsBtn = document.getElementById("settings-btn");
 const settings = document.getElementById("settings-page");
-<<<<<<< HEAD
 const cityBtn = document.getElementById("city-btn");
-=======
-const backBtn = document.getElementById("back-btn");
 const mainSections = document.querySelectorAll(".main-section");
->>>>>>> 015bff2b8a751512c978040a43db7a1517659fbc
 
 // --- INITIALIZATION ---
 function initializeApp() {
