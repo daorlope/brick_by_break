@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mini City Simulator</title>
+  <style>
+    :root{
+      --bg:#0b1020; --panel:#111a33; --panel2:#0f1730; --text:#e6ecff; --muted:#aab6e6;
+      --grid:#1d2a52; --line:#223263; --btn:#1a2a5a; --btn2:#233a7a; --danger:#7a2333;
+    }
+    *{box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;}
+    body{margin:0;background:linear-gradient(180deg,#090d1b,#0b1020);color:var(--text);}
+    header{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+    header h1{font-size:16px;margin:0;color:var(--text);letter-spacing:.2px}
+    .wrap{display:grid;grid-template-columns:340px 1fr;gap:14px;padding:14px;max-width:1200px;margin:0 auto;}
+    .panel{background:rgba(17,26,51,.9);border:1px solid var(--line);border-radius:14px;padding:12px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+    .panel h2{font-size:13px;margin:0 0 10px 0;color:var(--muted);font-weight:650}
+    .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    button, select{
+      background:var(--btn);border:1px solid var(--line);color:var(--text);
+      padding:8px 10px;border-radius:10px;cursor:pointer;font-weight:650;
+    }
+    button:hover{background:var(--btn2)}
+    button.danger{background:rgba(122,35,51,.4);border-color:rgba(122,35,51,.8)}
+    button.danger:hover{background:rgba(122,35,51,.55)}
+    .stat{display:flex;justify-content:space-between;gap:10px;padding:8px 10px;border-radius:12px;background:rgba(15,23,48,.75);border:1px solid var(--line);margin:8px 0}
+    .stat span{color:var(--muted)}
+    .help{color:var(--muted);font-size:12px;line-height:1.35;margin-top:10px}
+    .legend{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+    .chip{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:rgba(15,23,48,.75)}
+    .swatch{width:14px;height:14px;border-radius:4px;border:1px solid rgba(255,255,255,.18)}
+    canvas{width:100%;height:auto;border-radius:14px;border:1px solid var(--line);background:#07102a;display:block}
+    .topbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .pill{padding:6px 10px;border:1px solid var(--line);border-radius:999px;background:rgba(15,23,48,.75);color:var(--muted);font-size:12px}
+    @media (max-width: 940px){
+      .wrap{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Mini City Simulator</h1>
+  <div class="topbar">
+    <span class="pill">Paint tiles + simulate growth</span>
+    <span class="pill">Tip: roads connect zones</span>
+  </div>
+</header>
+
+<div class="wrap">
+  <aside class="panel">
+    <h2>Tools</h2>
+    <div class="row">
+      <select id="tool">
+        <option value="road">Road</option>
+        <option value="res">Residential</option>
+        <option value="com">Commercial</option>
+        <option value="ind">Industrial</option>
+        <option value="park">Park</option>
+        <option value="empty">Bulldoze</option>
+      </select>
+      <button id="run">▶ Run</button>
+      <button id="step">⏭ Step</button>
+      <button id="reset" class="danger">↺ Reset</button>
+    </div>
+
+    <h2 style="margin-top:14px;">City Stats</h2>
+    <div class="stat"><span>Day</span><b id="day">0</b></div>
+    <div class="stat"><span>Money</span><b id="money">$5,000</b></div>
+    <div class="stat"><span>Population</span><b id="pop">0</b></div>
+    <div class="stat"><span>Jobs</span><b id="jobs">0</b></div>
+    <div class="stat"><span>Happiness</span><b id="happy">50</b></div>
+    <div class="stat"><span>Pollution</span><b id="pollute">0</b></div>
+
+    <h2 style="margin-top:14px;">Costs / Effects</h2>
+    <div class="legend">
+      <div class="chip"><div class="swatch" style="background:#6b7280"></div><div><b>Road</b><div class="help">Cost $10</div></div></div>
+      <div class="chip"><div class="swatch" style="background:#22c55e"></div><div><b>Residential</b><div class="help">Cost $50</div></div></div>
+      <div class="chip"><div class="swatch" style="background:#60a5fa"></div><div><b>Commercial</b><div class="help">Cost $60</div></div></div>
+      <div class="chip"><div class="swatch" style="background:#f59e0b"></div><div><b>Industrial</b><div class="help">Cost $70</div></div></div>
+      <div class="chip"><div class="swatch" style="background:#16a34a"></div><div><b>Park</b><div class="help">Cost $30</div></div></div>
+      <div class="chip"><div class="swatch" style="background:#0b1020"></div><div><b>Bulldoze</b><div class="help">Refund $5</div></div></div>
+    </div>
+
+    <div class="help">
+      <b>Rules (simple):</b><br/>
+      • Zones “activate” if adjacent to a road connected to the road network.<br/>
+      • Residential grows when there are nearby jobs (Commercial/Industrial).<br/>
+      • Industry adds pollution; parks reduce pollution and boost happiness nearby.<br/>
+      • Money changes daily from taxes (pop + jobs) minus services (pollution).
+    </div>
+  </aside>
+
+  <main class="panel">
+    <canvas id="c" width="720" height="720"></canvas>
+    <div class="help" style="margin-top:10px;">
+      Click/drag to paint. Hold <b>Shift</b> to paint a 3×3 brush.
+    </div>
+  </main>
+</div>
+<script src="cit.js"></script>
+</body>
+<style>
+  body {
+    margin: 0;
+    width: 800px;
+    height: 600px;
+    overflow: auto;
+  }
+</style>
+</html>
