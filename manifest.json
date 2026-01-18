@@ -1,13 +1,13 @@
 {
   "manifest_version": 3,
-  "name": "House Spirit: Study Timer",
+  "name": "Brick By Break",
   "version": "1.0",
   "permissions": ["storage", "alarms", "notifications"],
   "background": {
     "service_worker": "background.js"
   },
   "action": {
-    "default_popup": "popup.html", 
+    "default_popup": "popup.html",
     "default_icon": "media/download.png"
   },
   "host_permissions": ["https://*.instructure.com/*", "https://*.edu/*"]
