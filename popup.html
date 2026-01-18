@@ -1,47 +1,78 @@
 <!doctype html>
 <html>
-
-<head>
-  <link rel="stylesheet" href="style.css" />
-</head>
-
-<body>
-  <div class="app-container">
-    <div class="spirit-zone">
-      <div id="spirit" class="slime"></div>
-      <div class="stats">
-        <span id="level">Lvl 1 Spirit</span>
-        <div class="xp-bar">
-          <div id="xp-fill"></div>
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="app-container">
+      <div class="spirit-zone main-section">
+        <div id="spirit" class="slime"></div>
+        <div class="stats">
+          <span id="level">Lvl 1 Spirit</span>
+          <div class="xp-bar"><div id="xp-fill"></div></div>
         </div>
       </div>
     </div>
 
     <div class="controls">
       <button id="settings-btn">Settings</button>
+      <button id="settings-btn" class="ghost-btn main-section">Settings</button>
       <div id="settings-page" class="hidden">
-        <button id="back-btn">Back</button>
+        <button id="back-btn" class="ghost-btn">Back</button>
         <h3>Settings</h3>
         <p class="text-xs">Paste your Canvas Access Token:</p>
         <input type="password" id="token-input" placeholder="Paste token here..." />
         <button id="save-token">Save Token</button>
+        <p class="text-xs">Timer length (hh:mm:ss):</p>
+        <div class="timer-inputs">
+          <input
+            type="text"
+            id="timer-hours-input"
+            inputmode="numeric"
+            maxlength="2"
+            placeholder="00"
+          />
+          <input
+            type="text"
+            id="timer-minutes-input"
+            inputmode="numeric"
+            maxlength="2"
+            placeholder="25"
+          />
+          <input
+            type="text"
+            id="timer-seconds-input"
+            inputmode="numeric"
+            maxlength="2"
+            placeholder="00"
+          />
+        </div>
+        <div class="text-xs" id="xp-preview">Potential XP: 0</div>
+        <button id="save-timer">Save Timer</button>
+        <div class="text-xs">
+          Total time worked: <span id="total-worked">00:00:00</span>
+        </div>
       </div>
 
       <div class="city-btn">
+      <div class="main-section">
         <a href="city.html"><button id="city-btn">Go to city</button></a>
       </div>
     </div>
 
-    <div class="timer-card">
-      <h2 id="timer-display">25:00</h2>
-      <button id="start-btn">Focus Session</button>
-    </div>
+      <div class="timer-card main-section">
+        <h2 id="timer-display">00:25:00</h2>
+        <div id="xp-float-container" aria-hidden="true"></div>
+        <button id="start-btn">Focus Session</button>
+      </div>
 
-    <div class="canvas-feed">
-      <h3>Due Soon (Canvas)</h3>
-      <div id="task-list">
-        <div class="task-item">
-          <span>Loading assignments...</span>
+      <div class="canvas-feed main-section">
+        <h3>Due Soon (Canvas)</h3>
+        <div id="task-list">
+          <div class="task-item">
+            <span>Loading assignments...</span>
+          </div>
         </div>
       </div>
     </div>
