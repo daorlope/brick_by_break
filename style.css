@@ -68,12 +68,41 @@ body {
   border-radius: 16px;
   text-align: center;
   margin-bottom: 12px;
+  position: relative;
 }
 
 #timer-display {
   font-size: 2rem;
   margin: 0;
   font-weight: 800;
+}
+
+#xp-float-container {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  pointer-events: none;
+}
+
+.xp-float {
+  color: #4ade80;
+  font-size: 0.75rem;
+  font-weight: 700;
+  animation: xp-pop 1s ease-out forwards;
+}
+
+@keyframes xp-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
 }
 
 button {
@@ -85,6 +114,28 @@ button {
   font-weight: bold;
   cursor: pointer;
   margin-top: 10px;
+}
+
+.text-xs {
+  font-size: 0.75rem;
+  opacity: 0.8;
+  margin: 10px 0 6px;
+}
+
+input {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  background: #0b1220;
+  color: var(--text);
+  box-sizing: border-box;
+}
+
+.timer-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
 }
 
 .canvas-feed h3 {
