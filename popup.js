@@ -79,16 +79,16 @@ function initializeApp() {
         startBtn.textContent = "Start Session";
       }
 
-      if (result.canvasToken) {
+      // if (result.canvasToken) {
         // If we have a token, fetch real data
         tokenInput.value = result.canvasToken;
         showMain();
         fetchCanvasTasks(result.canvasToken);
-      } else {
-        // If no token, show error message or settings
-        showSettings();
-        taskList.innerHTML = `<p style="color:#94a3b8; font-size:11px; text-align:center;">Please enter your token in Settings.</p>`;
-      }
+      // } else {
+      //   // If no token, show error message or settings
+      //   showSettings();
+      //   taskList.innerHTML = `<p style="color:#94a3b8; font-size:11px; text-align:center;">Please enter your token in Settings.</p>`;
+      // }
     },
   );
 }
@@ -441,15 +441,15 @@ startBtn.addEventListener("click", () => {
 });
 
 // --- BUTTON MANGEMENT ---
-settingsBtn.addEventListener("click", () => {
-  settings.classList.toggle("hidden");
-  settingsBtn.classList.toggle("hidden");
-  cityBtn.classList.toggle("hidden");
-})
+// settingsBtn.addEventListener("click", () => {
+//   settings.classList.toggle("hidden");
+//   settingsBtn.classList.toggle("hidden");
+//   cityBtn.classList.toggle("hidden");
+// })
 
-backBtn.addEventListener("click", () => {
-  settings.classList.toggle("hidden");
-  settingsBtn.classList.toggle("hidden");
-  cityBtn.classList.toggle("hidden");
+// backBtn.addEventListener("click", () => {
+//   settings.classList.toggle("hidden");
+//   settingsBtn.classList.toggle("hidden");
+//   cityBtn.classList.toggle("hidden");
 
-})
+// })
