@@ -1,7 +1,16 @@
 document.addEventListener("DOMContentLoaded", () => {
   // ----- Config -----
   const N = 30; // grid size
-  const TILE = { empty:0, road:1, res:2, com:3, ind:4, park:5 };
+  const TILE = {
+    empty: 0,
+    road: 1,
+    res: 2,
+    com: 3,
+    ind: 4,
+    park: 5,
+    plaza: 6,
+    school: 7,
+  };
 
   const COLORS = {
     [TILE.empty]: "#0b1020",
@@ -10,15 +19,8 @@ document.addEventListener("DOMContentLoaded", () => {
     [TILE.com]:   "#60a5fa",
     [TILE.ind]:   "#f59e0b",
     [TILE.park]:  "#16a34a",
-  };
-
-  const COST = {
-    [TILE.empty]: 0,
-    [TILE.road]: 10,
-    [TILE.res]:  50,
-    [TILE.com]:  60,
-    [TILE.ind]:  70,
-    [TILE.park]: 30,
+    [TILE.plaza]: "#a855f7",
+    [TILE.school]: "#f97316",
   };
 
   // Capacity per developed zone tile (0..3 dev level)
@@ -33,11 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // dev levels for each tile (0..3); only meaningful for zones
   const dev  = Array.from({length:N}, () => Array(N).fill(0));
 
-  const BASE_MONEY = 5000;
-  let money = BASE_MONEY;
   let day = 0;
-  let running = false;
-  let timer = null;
 
   // cached stats
   let population = 0;
@@ -47,8 +45,6 @@ document.addEventListener("DOMContentLoaded", () => {
   let playerLevel = 1;
   let playerXp = 0;
   let growthBonus = 1;
-  let taxBonus = 1;
-  let buildDiscount = 1;
 
   // ----- DOM -----
   const canvas = document.getElementById("c");
@@ -59,13 +55,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const ctx = canvas.getContext("2d");
 
   const toolSel = document.getElementById("tool");
-  const runBtn = document.getElementById("run");
   const stepBtn = document.getElementById("step");
   const resetBtn = document.getElementById("reset");
   const unlockNoteEl = document.getElementById("unlock-note");
 
   const dayEl = document.getElementById("day");
-  const moneyEl = document.getElementById("money");
   const popEl = document.getElementById("pop");
   const jobsEl = document.getElementById("jobs");
   const happyEl = document.getElementById("happy");
@@ -73,13 +67,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const levelEl = document.getElementById("city-level");
   const xpEl = document.getElementById("city-xp");
 
-  const fmtMoney = (x) => "$" + Math.round(x).toLocaleString();
   const TOOL_UNLOCKS = {
     road: 1,
     res: 1,
     park: 2,
     com: 3,
     ind: 4,
+    plaza: 3,
+    school: 5,
     empty: 1,
   };
 
@@ -166,7 +161,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function updateUI(){
     dayEl.textContent = String(day);
-    moneyEl.textContent = fmtMoney(money);
     popEl.textContent = population.toLocaleString();
     jobsEl.textContent = jobs.toLocaleString();
     happyEl.textContent = String(Math.max(0, Math.min(100, Math.round(happiness))));
@@ -198,18 +192,21 @@ document.addEventListener("DOMContentLoaded", () => {
     return score;
   }
 
-  function parkBonus(x,y){
-    // parks nearby boost happiness and reduce pollution
+  function amenityBonus(x,y){
+    // amenities nearby boost happiness and reduce pollution
     let bonus = 0;
     let cleanse = 0;
     for(let dy=-2;dy<=2;dy++){
       for(let dx=-2;dx<=2;dx++){
         const a=x+dx,b=y+dy;
         if(!inBounds(a,b)) continue;
-        if(grid[b][a]===TILE.park){
+        const tile = grid[b][a];
+        if(tile === TILE.park || tile === TILE.plaza || tile === TILE.school){
           const d = Math.abs(dx)+Math.abs(dy);
-          bonus += 3 / Math.max(1,d);
-          cleanse += 2 / Math.max(1,d);
+          const base = tile === TILE.school ? 4 : tile === TILE.plaza ? 2 : 3;
+          const clean = tile === TILE.school ? 2.5 : tile === TILE.plaza ? 1.5 : 2;
+          bonus += base / Math.max(1,d);
+          cleanse += clean / Math.max(1,d);
         }
       }
     }
@@ -232,20 +229,25 @@ document.addEventListener("DOMContentLoaded", () => {
         if(t===TILE.road) pol += 0.15; // tiny traffic pollution
       }
     }
-    // parks reduce pollution globally a bit
-    let parks=0;
-    for(let y=0;y<N;y++) for(let x=0;x<N;x++) if(grid[y][x]===TILE.park) parks++;
-    pol = Math.max(0, pol - parks*1.2);
+    // amenities reduce pollution globally a bit
+    let amenities = 0;
+    for(let y=0;y<N;y++) for(let x=0;x<N;x++){
+      const tile = grid[y][x];
+      if(tile===TILE.park) amenities += 1;
+      if(tile===TILE.plaza) amenities += 0.8;
+      if(tile===TILE.school) amenities += 1.2;
+    }
+    pol = Math.max(0, pol - amenities*1.1);
 
     population = Math.round(pop);
     jobs = Math.round(jb);
     pollution = pol;
 
-    // happiness from (jobs coverage, pollution, parks)
+    // happiness from (jobs coverage, pollution, amenities)
     const jobCoverage = population === 0 ? 1 : Math.min(1, jobs / population);
     let happy = 40 + jobCoverage*30 - Math.min(35, pollution*0.7);
-    // add park happiness
-    happy += Math.min(20, parks*0.25);
+    // add amenity happiness
+    happy += Math.min(20, amenities*0.3);
     happiness = Math.max(0, Math.min(100, happy));
   }
 
@@ -267,7 +269,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if(t===TILE.res){
           const score = nearbyJobsScore(x,y);
-          const { bonus } = parkBonus(x,y);
+          const { bonus } = amenityBonus(x,y);
           const want = score + bonus*2;
           const growChance =
             Math.min(0.55, 0.08 + want / 80) * (happiness / 70) * growthBonus;
@@ -284,9 +286,11 @@ document.addEventListener("DOMContentLoaded", () => {
           for(const [a,b] of neigh8(x,y)){
             if(grid[b][a]===TILE.res) nearbyPop += CAP[TILE.res][dev[b][a]];
           }
+          const { bonus } = amenityBonus(x,y);
           const growChance =
             Math.min(0.5, 0.06 + nearbyPop / 250) *
             (happiness / 80) *
+            (1 + bonus / 30) *
             growthBonus;
           const decayChance =
             Math.max(0, 0.10 - happiness / 160) * (2 - growthBonus);
@@ -296,8 +300,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if(t===TILE.ind){
           const recomputedUnemp = Math.max(0, population - jobs);
+          const { bonus } = amenityBonus(x,y);
           const growChance =
-            Math.min(0.45, 0.08 + recomputedUnemp / 400) * growthBonus;
+            Math.min(0.45, 0.08 + recomputedUnemp / 400) *
+            (1 + bonus / 40) *
+            growthBonus;
           const decayChance =
             (0.07 + Math.min(0.12, pollution / 250)) * (2 - growthBonus);
           if(dev[y][x] < 3 && Math.random() < growChance) dev[y][x]++;
@@ -307,21 +314,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     recomputeStats();
-
-    // Money model
-    const taxIncome = (population * 0.35 + jobs * 0.25) * taxBonus;
-    const serviceCost = 40 + pollution * 1.15;
-    const happinessBonus = (happiness - 50) * 1.0;
-    money += taxIncome - serviceCost + happinessBonus;
-
-    // Soft game-over behavior: if money very low, zones decay faster
-    if(money < -500){
-      for(let y=0;y<N;y++) for(let x=0;x<N;x++){
-        if(isZone(grid[y][x]) && dev[y][x]>0 && Math.random()<0.25) dev[y][x]--;
-      }
-      money += 150;
-      recomputeStats();
-    }
 
     updateUI();
     draw();
@@ -336,15 +328,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const next = tile;
 
       if(prev === next) return;
-
-      // Bulldoze refund
-      if(next === TILE.empty && prev !== TILE.empty){
-        money += 5;
-      } else if(next !== TILE.empty) {
-        const cost = Math.max(1, Math.round(COST[next] * buildDiscount));
-        if(money < cost) return;
-        money -= cost;
-      }
 
       grid[y][x] = next;
 
@@ -388,17 +371,6 @@ document.addEventListener("DOMContentLoaded", () => {
   canvas.addEventListener("mousemove", (e)=>{ if(dragging) handlePaint(e); });
 
   // ----- Controls -----
-  runBtn.addEventListener("click", () => {
-    running = !running;
-    runBtn.textContent = running ? "⏸ Pause" : "▶ Run";
-    if(running){
-      timer = setInterval(simulateDay, 350);
-    } else {
-      clearInterval(timer);
-      timer = null;
-    }
-  });
-
   stepBtn.addEventListener("click", () => simulateDay());
 
   resetBtn.addEventListener("click", () => {
@@ -408,28 +380,17 @@ document.addEventListener("DOMContentLoaded", () => {
         dev[y][x] = 0;
       }
     }
-    money = BASE_MONEY + levelMoneyBonus();
     day = 0;
-    running = false;
-    runBtn.textContent = "▶ Run";
-    if(timer){ clearInterval(timer); timer=null; }
     recomputeStats();
     updateUI();
     draw();
   });
-
-  function levelMoneyBonus(){
-    return Math.max(0, (playerLevel - 1) * 200);
-  }
 
   function applyPlayerProgress(level, xp){
     playerLevel = Number.isFinite(level) ? level : 1;
     playerXp = Number.isFinite(xp) ? xp : 0;
     const xpProgress = Math.min(1, playerXp / 100);
     growthBonus = Math.min(1.6, 1 + playerLevel * 0.03 + xpProgress * 0.05);
-    taxBonus = Math.min(1.4, 1 + playerLevel * 0.02 + xpProgress * 0.02);
-    buildDiscount = Math.max(0.7, 1 - playerLevel * 0.01 - xpProgress * 0.01);
-    money = BASE_MONEY + levelMoneyBonus();
     if (levelEl) levelEl.textContent = `City Level ${playerLevel}`;
     if (xpEl) xpEl.textContent = `XP ${playerXp}/100`;
     updateToolOptions();

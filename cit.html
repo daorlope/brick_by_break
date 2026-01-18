@@ -65,33 +65,36 @@
       <select id="tool">
         <option value="road">Road</option>
         <option value="res">Residential</option>
+        <option value="park">Park</option>
+        <option value="plaza">Plaza</option>
         <option value="com">Commercial</option>
         <option value="ind">Industrial</option>
-        <option value="park">Park</option>
+        <option value="school">School</option>
         <option value="empty">Bulldoze</option>
       </select>
-      <button id="run">▶ Run</button>
       <button id="step">⏭ Step</button>
       <button id="reset" class="danger">↺ Reset</button>
+      <a href="popup.html"><button id="back">← Back</button></a>
     </div>
     <div class="help" id="unlock-note"></div>
 
     <h2 style="margin-top:14px;">City Stats</h2>
     <div class="stat"><span>Day</span><b id="day">0</b></div>
-    <div class="stat"><span>Money</span><b id="money">$5,000</b></div>
     <div class="stat"><span>Population</span><b id="pop">0</b></div>
     <div class="stat"><span>Jobs</span><b id="jobs">0</b></div>
     <div class="stat"><span>Happiness</span><b id="happy">50</b></div>
     <div class="stat"><span>Pollution</span><b id="pollute">0</b></div>
 
-    <h2 style="margin-top:14px;">Costs / Effects</h2>
+    <h2 style="margin-top:14px;">Tiles</h2>
     <div class="legend">
-      <div class="chip"><div class="swatch" style="background:#6b7280"></div><div><b>Road</b><div class="help">Cost $10</div></div></div>
-      <div class="chip"><div class="swatch" style="background:#22c55e"></div><div><b>Residential</b><div class="help">Cost $50</div></div></div>
-      <div class="chip"><div class="swatch" style="background:#60a5fa"></div><div><b>Commercial</b><div class="help">Cost $60</div></div></div>
-      <div class="chip"><div class="swatch" style="background:#f59e0b"></div><div><b>Industrial</b><div class="help">Cost $70</div></div></div>
-      <div class="chip"><div class="swatch" style="background:#16a34a"></div><div><b>Park</b><div class="help">Cost $30</div></div></div>
-      <div class="chip"><div class="swatch" style="background:#0b1020"></div><div><b>Bulldoze</b><div class="help">Refund $5</div></div></div>
+      <div class="chip"><div class="swatch" style="background:#6b7280"></div><div><b>Road</b><div class="help">Connects zones</div></div></div>
+      <div class="chip"><div class="swatch" style="background:#22c55e"></div><div><b>Residential</b><div class="help">Adds population</div></div></div>
+      <div class="chip"><div class="swatch" style="background:#16a34a"></div><div><b>Park</b><div class="help">Boosts happiness</div></div></div>
+      <div class="chip"><div class="swatch" style="background:#a855f7"></div><div><b>Plaza</b><div class="help">Boosts nearby growth</div></div></div>
+      <div class="chip"><div class="swatch" style="background:#60a5fa"></div><div><b>Commercial</b><div class="help">Adds jobs</div></div></div>
+      <div class="chip"><div class="swatch" style="background:#f59e0b"></div><div><b>Industrial</b><div class="help">Adds jobs + pollution</div></div></div>
+      <div class="chip"><div class="swatch" style="background:#f97316"></div><div><b>School</b><div class="help">Boosts happiness + growth</div></div></div>
+      <div class="chip"><div class="swatch" style="background:#0b1020"></div><div><b>Bulldoze</b><div class="help">Clear a tile</div></div></div>
     </div>
 
     <div class="help">
@@ -99,7 +102,7 @@
       • Zones “activate” if adjacent to a road connected to the road network.<br/>
       • Residential grows when there are nearby jobs (Commercial/Industrial).<br/>
       • Industry adds pollution; parks reduce pollution and boost happiness nearby.<br/>
-      • Money changes daily from taxes (pop + jobs) minus services (pollution).
+      • XP/level unlocks new tools and boosts growth speed.
     </div>
   </aside>
 

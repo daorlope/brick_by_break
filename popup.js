@@ -8,6 +8,7 @@ let timerRunning = false;
 let endTime = null;
 let lastXpSecond = null;
 let xp = 0;
+let level = 1;
 let awardedTaskIds = new Set();
 let sessionType = "focus";
 let sessionId = null;
@@ -17,6 +18,7 @@ let breakActionsBySession = {};
 const display = document.getElementById("timer-display");
 const startBtn = document.getElementById("start-btn");
 const xpFill = document.getElementById("xp-fill");
+const levelEl = document.getElementById("level");
 const taskList = document.getElementById("task-list");
 const tokenInput = document.getElementById("token-input");
 const saveBtn = document.getElementById("save-token");
@@ -52,6 +54,7 @@ function initializeApp() {
       "remainingSeconds",
       "totalWorkedSeconds",
       "xp",
+      "level",
       "awardedTaskIds",
       "sessionType",
       "sessionId",
@@ -82,6 +85,10 @@ function initializeApp() {
       if (typeof result.xp === "number") {
         xp = result.xp;
       }
+      if (typeof result.level === "number") {
+        level = result.level;
+      }
+      updateLevelText();
       xpFill.style.width = `${xp}%`;
       if (Array.isArray(result.awardedTaskIds)) {
         awardedTaskIds = new Set(result.awardedTaskIds);
@@ -512,8 +519,9 @@ breakButtons.forEach((button) => {
 
 function gainXP(amount) {
   xp += amount;
-  if (xp >= 100) {
-    xp = 0;
+  while (xp >= 100) {
+    xp -= 100;
+    level += 1;
     const city = document.getElementById("city-grid");
     if (city) {
       city.style.transform = "scale(1.02)";
@@ -523,7 +531,8 @@ function gainXP(amount) {
     }
   }
   xpFill.style.width = `${xp}%`;
-  chrome.storage.local.set({ xp });
+  updateLevelText();
+  chrome.storage.local.set({ xp, level });
   showXpFloat(amount);
 }
 
@@ -543,6 +552,12 @@ function formatDuration(totalSeconds) {
   return `${hours.toString().padStart(2, "0")}:${mins
     .toString()
     .padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+}
+
+function updateLevelText() {
+  if (levelEl) {
+    levelEl.textContent = `Lvl ${level} City`;
+  }
 }
 
 chrome.storage.onChanged.addListener((changes) => {
