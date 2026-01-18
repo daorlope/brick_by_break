@@ -25,6 +25,21 @@ body {
   margin-bottom: 10px;
 }
 
+.top-actions button {
+  margin: 0;
+  flex: 1;
+}
+
+.top-actions a {
+  display: flex;
+  flex: 1;
+}
+
+.top-actions a button {
+  width: 100%;
+}
+
+
 .spirit-zone {
   height: 120px;
   background: linear-gradient(to bottom, #312e81, #1e293b);
@@ -172,6 +187,44 @@ body {
   color: #f8fafc;
 }
 
+.chat-log {
+  background: #0b1220;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 10px;
+  max-height: 180px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.chat-msg {
+  font-size: 0.75rem;
+  line-height: 1.3;
+  padding: 8px;
+  border-radius: 10px;
+}
+
+.chat-msg.user {
+  background: #1e293b;
+  align-self: flex-end;
+}
+
+.chat-msg.bot {
+  background: #111827;
+  border: 1px solid #334155;
+  align-self: flex-start;
+}
+
+.chat-input-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
 #xp-float-container {
   position: absolute;
   right: 12px;
@@ -220,6 +273,27 @@ button:hover {
 button:focus-visible {
   outline: 2px solid #94a3b8;
   outline-offset: 2px;
+}
+
+.ghost-btn {
+  background: transparent;
+  border: 1px solid #334155;
+  color: #cbd5f5;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-weight: 600;
+  margin: 0 0 10px;
+}
+
+.ghost-btn:hover {
+  box-shadow: 0 0 0 2px #64748b;
+}
+
+.top-actions-btn {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  margin: 0;
 }
 
 .text-xs {

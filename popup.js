@@ -35,12 +35,26 @@ const breakPrompt = document.getElementById("break-prompt");
 const breakSuccess = document.querySelector(".break-success");
 const breakButtons = document.querySelectorAll(".break-btn");
 const spiritZone = document.querySelector(".spirit-zone");
+const chatSection = document.getElementById("chat-section");
+const chatLog = document.getElementById("chat-log");
+const chatInput = document.getElementById("chat-input");
+const chatSend = document.getElementById("chat-send");
+const geminiKeyInput = document.getElementById("gemini-key-input");
+const saveGeminiKeyBtn = document.getElementById("save-gemini-key");
+const activeRecallBtn = document.getElementById("active-recall-btn");
+const chatBackBtn = document.getElementById("chat-back-btn");
 
 const backBtn = document.getElementById("back-btn");
 const settingsBtn = document.getElementById("settings-btn");
 const settings = document.getElementById("settings-page");
 const cityBtn = document.getElementById("city-btn");
 const mainSections = document.querySelectorAll(".main-section");
+
+const SYSTEM_PROMPT =
+  "You are a friendly study coach. Ask short active-recall questions, keep replies concise, and always end with a single question.";
+let geminiKey = "";
+let chatHistory = [];
+let currentTopic = "";
 
 // --- INITIALIZATION ---
 function initializeApp() {
@@ -59,6 +73,7 @@ function initializeApp() {
       "sessionType",
       "sessionId",
       "breakActionsBySession",
+      "geminiKey",
     ],
     (result) => {
       if (result.timerSeconds) {
@@ -75,6 +90,10 @@ function initializeApp() {
       }
       if (result.breakActionsBySession) {
         breakActionsBySession = result.breakActionsBySession;
+      }
+      if (typeof result.geminiKey === "string") {
+        geminiKey = result.geminiKey;
+        if (geminiKeyInput) geminiKeyInput.value = geminiKey;
       }
 
       timeLeft = getSessionDuration(sessionType);
@@ -114,6 +133,7 @@ function initializeApp() {
 
       updateSessionButtons();
       updateBreakPrompt();
+      ensureChatGreeting();
 
       // if (result.canvasToken) {
         // If we have a token, fetch real data
@@ -225,11 +245,19 @@ function renderTasks(tasks) {
 function showSettings() {
   settings.classList.remove("hidden");
   mainSections.forEach((section) => section.classList.add("hidden"));
+  if (chatSection) chatSection.classList.add("hidden");
 }
 
 function showMain() {
   settings.classList.add("hidden");
   mainSections.forEach((section) => section.classList.remove("hidden"));
+  if (chatSection) chatSection.classList.add("hidden");
+}
+
+function showChat() {
+  settings.classList.add("hidden");
+  mainSections.forEach((section) => section.classList.add("hidden"));
+  if (chatSection) chatSection.classList.remove("hidden");
 }
 
 settingsBtn.addEventListener("click", () => {
@@ -237,6 +265,15 @@ settingsBtn.addEventListener("click", () => {
 });
 
 backBtn.addEventListener("click", () => {
+  showMain();
+});
+
+activeRecallBtn?.addEventListener("click", () => {
+  showChat();
+  ensureChatGreeting();
+});
+
+chatBackBtn?.addEventListener("click", () => {
   showMain();
 });
 
@@ -249,6 +286,18 @@ saveBtn.addEventListener("click", () => {
       location.reload();
     });
   }
+});
+
+saveGeminiKeyBtn?.addEventListener("click", () => {
+  const key = geminiKeyInput?.value.trim();
+  if (!key) {
+    alert("Enter a Gemini API key.");
+    return;
+  }
+  geminiKey = key;
+  chrome.storage.local.set({ geminiKey }, () => {
+    alert("Gemini key saved!");
+  });
 });
 
 saveTimerBtn.addEventListener("click", () => {
@@ -434,6 +483,104 @@ function updateStartButtonLabel() {
   }
   startBtn.textContent =
     sessionType === "focus" ? "Start Focus" : "Start Break";
+}
+
+function appendChatMessage(role, text) {
+  if (!chatLog) return;
+  const msg = document.createElement("div");
+  msg.className = `chat-msg ${role}`;
+  msg.textContent = text;
+  chatLog.appendChild(msg);
+  chatLog.scrollTop = chatLog.scrollHeight;
+}
+
+function ensureChatGreeting() {
+  if (!chatLog || chatLog.children.length > 0) return;
+  appendChatMessage("bot", "What are you studying right now?");
+}
+
+async function sendChat() {
+  const text = chatInput?.value.trim();
+  if (!text) return;
+  if (!geminiKey) {
+    appendChatMessage("bot", "Add your Gemini API key in Settings first.");
+    return;
+  }
+
+  appendChatMessage("user", text);
+  chatInput.value = "";
+
+  if (!currentTopic) {
+    currentTopic = text;
+  }
+
+  const historyWindow = chatHistory.slice(-6);
+  const contents = [
+    {
+      role: "user",
+      parts: [
+        {
+          text: `${SYSTEM_PROMPT}\nTopic: ${currentTopic}\nKeep it short.`,
+        },
+      ],
+    },
+    ...historyWindow.map((item) => ({
+      role: item.role,
+      parts: [{ text: item.text }],
+    })),
+    { role: "user", parts: [{ text }] },
+  ];
+
+  chatSend.disabled = true;
+  try {
+    const models = [
+      "gemini-3-flash-preview",
+      "gemini-1.5-flash-latest",
+      "gemini-1.5-flash",
+      "gemini-1.5-pro-latest",
+      "gemini-1.5-pro",
+      "gemini-pro",
+    ];
+    let data = null;
+    let lastError = null;
+
+    for (const model of models) {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contents }),
+        },
+      );
+      if (!response.ok) {
+        const errorBody = await response.text();
+        lastError = errorBody || `Gemini request failed for ${model}`;
+        continue;
+      }
+      data = await response.json();
+      break;
+    }
+
+    if (!data) {
+      throw new Error(lastError || "Gemini request failed");
+    }
+    const reply =
+      data.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "I could not generate a response.";
+
+    chatHistory.push({ role: "user", text });
+    chatHistory.push({ role: "model", text: reply });
+    appendChatMessage("bot", reply);
+  } catch (error) {
+    const message =
+      typeof error?.message === "string" && error.message.trim()
+        ? error.message.slice(0, 200)
+        : "Something went wrong. Try again.";
+    appendChatMessage("bot", `Gemini error: ${message}`);
+  } finally {
+    chatSend.disabled = false;
+  }
 }
 
 function sanitizeTwoDigitsInput(input) {
@@ -639,6 +786,16 @@ restartBtn?.addEventListener("click", () => {
   chrome.storage.local.set({
     sessionId: null,
   });
+});
+
+chatSend?.addEventListener("click", () => {
+  sendChat();
+});
+
+chatInput?.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    sendChat();
+  }
 });
 
 // --- BUTTON MANGEMENT ---

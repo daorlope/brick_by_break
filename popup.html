@@ -15,8 +15,17 @@
       </div>
 
       <div class="top-actions main-section">
-        <button id="settings-btn" class="ghost-btn">Settings</button>
-        <a href="cit.html"><button id="city-btn">Go to city</button></a>
+        <button id="settings-btn" class="ghost-btn top-actions-btn">
+          Settings
+        </button>
+        <button id="active-recall-btn" class="ghost-btn top-actions-btn">
+          Active Recall
+        </button>
+        <a href="cit.html">
+          <button id="city-btn" class="ghost-btn top-actions-btn">
+            City Builder
+          </button>
+        </a>
       </div>
 
       <div id="settings-page" class="hidden">
@@ -33,7 +42,9 @@
               <span class="step">4. Scroll down to Approved Integrations</span>
               <span class="step">5. Click + New Access Token</span>
               <span class="step">6. Create a token</span>
-              <span class="step">7. Copy and paste the token and insert below</span>
+              <span class="step"
+                >7. Copy and paste the token and insert below</span
+              >
             </span>
           </span>
         </p>
@@ -71,6 +82,26 @@
         <button id="save-timer">Save Timer</button>
         <div class="text-xs">
           Total time worked: <span id="total-worked">00:00:00</span>
+        </div>
+        <p class="text-xs">Gemini API Key:</p>
+        <input
+          type="password"
+          id="gemini-key-input"
+          placeholder="Paste Gemini API key..."
+        />
+        <button id="save-gemini-key" class="ghost-btn">Save Key</button>
+      </div>
+
+      <div id="chat-section" class="hidden">
+        <button id="chat-back-btn" class="ghost-btn">Back</button>
+        <div id="chat-log" class="chat-log"></div>
+        <div class="chat-input-row">
+          <input
+            type="text"
+            id="chat-input"
+            placeholder="Type your response..."
+          />
+          <button id="chat-send">Send</button>
         </div>
       </div>
 

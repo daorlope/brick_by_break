@@ -10,5 +10,9 @@
     "default_popup": "popup.html",
     "default_icon": "media/download.png"
   },
-  "host_permissions": ["https://*.instructure.com/*", "https://*.edu/*"]
+  "host_permissions": [
+    "https://*.instructure.com/*",
+    "https://*.edu/*",
+    "https://generativelanguage.googleapis.com/*"
+  ]
 }
