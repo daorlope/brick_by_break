@@ -391,3 +391,18 @@ input {
 .controls {
   margin-bottom: 2%;
 }
+
+#angry-btn {
+  display: flex;
+  justify-content: left;
+  background: var(--accent);
+  border: none;
+  color: white;
+  padding: 0.5px 0.5px;
+  border-radius: 100px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 10px;
+  margin-left: 97%;
+  transition: box-shadow 0.2s ease, transform 0.2s ease; 
+}
