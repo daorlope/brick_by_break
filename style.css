@@ -306,3 +306,42 @@ input {
 .controls {
   margin-bottom: 2%;
 }
+
+.city-page {
+  width: 360px;
+}
+
+.city-container {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.city-header h2 {
+  margin: 0 0 4px;
+  font-size: 1.1rem;
+}
+
+.city-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+.ascii-frame {
+  background: #0b1220;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.ascii-frame pre {
+  margin: 0;
+  font-family: "Courier New", monospace;
+  font-size: 0.7rem;
+  line-height: 1.2;
+  color: #e2e8f0;
+  white-space: pre;
+}

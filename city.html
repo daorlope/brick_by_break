@@ -1,12 +1,23 @@
+<!doctype html>
 <html>
-    <head>
-        <link rel="stylesheet" href="style.css" />
-    </head>
-    <body>
-        <img src="mog.jpg">
-        <audio src="mog.mp3#t=00:00:28" autoplay></audio>
-        <br>
-        <a href="popup.html"><button>Back</button></a>
-    </body>
-
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body class="city-page">
+    <div class="city-container">
+      <div class="city-header">
+        <h2>City Progress</h2>
+        <div class="city-meta">
+          <span id="city-xp">Total XP: 0</span>
+          <span id="city-stage">Stage 0</span>
+        </div>
+      </div>
+      <div class="ascii-frame" role="img" aria-label="ASCII city skyline">
+        <pre id="city-ascii"></pre>
+      </div>
+      <a href="popup.html"><button class="ghost-btn">Back</button></a>
+    </div>
+    <script src="city.js"></script>
+  </body>
 </html>

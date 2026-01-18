@@ -8,6 +8,7 @@ let timerRunning = false;
 let endTime = null;
 let lastXpSecond = null;
 let xp = 0;
+let totalXp = 0;
 let awardedTaskIds = new Set();
 let sessionType = "focus";
 let sessionId = null;
@@ -52,6 +53,7 @@ function initializeApp() {
       "remainingSeconds",
       "totalWorkedSeconds",
       "xp",
+      "totalXp",
       "awardedTaskIds",
       "sessionType",
       "sessionId",
@@ -82,7 +84,16 @@ function initializeApp() {
       if (typeof result.xp === "number") {
         xp = result.xp;
       }
-      xpFill.style.width = `${xp}%`;
+      if (typeof result.totalXp === "number") {
+        totalXp = result.totalXp;
+      } else if (typeof result.xp === "number") {
+        totalXp = result.xp;
+        chrome.storage.local.set({ totalXp });
+      }
+      if (typeof result.xp !== "number" && typeof result.totalXp === "number") {
+        xp = totalXp % 100;
+      }
+      xpFill.style.width = `${Math.min(100, xp)}%`;
       if (Array.isArray(result.awardedTaskIds)) {
         awardedTaskIds = new Set(result.awardedTaskIds);
       }
@@ -511,19 +522,22 @@ breakButtons.forEach((button) => {
 });
 
 function gainXP(amount) {
+  totalXp += amount;
   xp += amount;
+  let leveledUp = false;
   if (xp >= 100) {
-    xp = 0;
+    xp = xp % 100;
+    leveledUp = true;
     const city = document.getElementById("city-grid");
-    if (city) {
+    if (city && leveledUp) {
       city.style.transform = "scale(1.02)";
       setTimeout(() => {
         city.style.transform = "scale(1)";
       }, 400);
     }
   }
-  xpFill.style.width = `${xp}%`;
-  chrome.storage.local.set({ xp });
+  xpFill.style.width = `${Math.min(100, xp)}%`;
+  chrome.storage.local.set({ xp, totalXp });
   showXpFloat(amount);
 }
 
