@@ -12,8 +12,11 @@
       <div class="spirit-zone main-section">
         <div id="city-grid" class="city-grid" aria-label="City"></div>
         <div class="stats">
-          <span id="level">Lvl 1 City</span>
-          <div class="xp-bar"><div id="xp-fill"></div></div>
+          <span id="level">Level 1 City</span>
+          <div class="xp-row">
+            <div class="xp-bar"><div id="xp-fill"></div></div>
+            <span id="xp-text">0/100 XP</span>
+          </div>
         </div>
       </div>
 
@@ -26,7 +29,7 @@
         </button>
         <a href="cit.html">
           <button id="city-btn" class="ghost-btn top-actions-btn">
-            Your City
+            View City
           </button>
         </a>
       </div>
@@ -93,6 +96,9 @@
           placeholder="Paste Gemini API key..."
         />
         <button id="save-gemini-key">Save Key</button>
+        <p class="text-xs">City name:</p>
+        <input type="text" id="city-name-input" placeholder="My City" />
+        <button id="save-city-name">Save City Name</button>
       </div>
 
       <div id="chat-section" class="hidden">

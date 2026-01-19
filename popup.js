@@ -9,6 +9,7 @@ let endTime = null;
 let lastXpSecond = null;
 let xp = 0;
 let level = 1;
+let buildTokens = 0;
 let awardedTaskIds = new Set();
 let sessionType = "focus";
 let sessionId = null;
@@ -19,6 +20,7 @@ const display = document.getElementById("timer-display");
 const startBtn = document.getElementById("start-btn");
 const xpFill = document.getElementById("xp-fill");
 const levelEl = document.getElementById("level");
+const xpText = document.getElementById("xp-text");
 const taskList = document.getElementById("task-list");
 const tokenInput = document.getElementById("token-input");
 const saveBtn = document.getElementById("save-token");
@@ -41,6 +43,8 @@ const chatInput = document.getElementById("chat-input");
 const chatSend = document.getElementById("chat-send");
 const geminiKeyInput = document.getElementById("gemini-key-input");
 const saveGeminiKeyBtn = document.getElementById("save-gemini-key");
+const cityNameInput = document.getElementById("city-name-input");
+const saveCityNameBtn = document.getElementById("save-city-name");
 const activeRecallBtn = document.getElementById("active-recall-btn");
 const chatBackBtn = document.getElementById("chat-back-btn");
 
@@ -69,11 +73,13 @@ function initializeApp() {
       "totalWorkedSeconds",
       "xp",
       "level",
+      "buildTokens",
       "awardedTaskIds",
       "sessionType",
       "sessionId",
       "breakActionsBySession",
       "geminiKey",
+      "cityName",
     ],
     (result) => {
       if (result.timerSeconds) {
@@ -95,6 +101,9 @@ function initializeApp() {
         geminiKey = result.geminiKey;
         if (geminiKeyInput) geminiKeyInput.value = geminiKey;
       }
+      if (typeof result.cityName === "string") {
+        if (cityNameInput) cityNameInput.value = result.cityName;
+      }
 
       timeLeft = getSessionDuration(sessionType);
       setTimerInputs(timerSeconds);
@@ -103,12 +112,21 @@ function initializeApp() {
       applyMood();
       if (typeof result.xp === "number") {
         xp = result.xp;
+      } else {
+        xp = 0;
       }
       if (typeof result.level === "number") {
         level = result.level;
+      } else {
+        level = 1;
+      }
+      chrome.storage.local.set({ xp, level });
+      if (typeof result.buildTokens === "number") {
+        buildTokens = result.buildTokens;
       }
       updateLevelText();
       xpFill.style.width = `${xp}%`;
+      updateXpText();
       if (Array.isArray(result.awardedTaskIds)) {
         awardedTaskIds = new Set(result.awardedTaskIds);
       }
@@ -298,6 +316,32 @@ saveGeminiKeyBtn?.addEventListener("click", () => {
   chrome.storage.local.set({ geminiKey }, () => {
     alert("Gemini key saved!");
   });
+});
+
+saveCityNameBtn?.addEventListener("click", () => {
+  const name = cityNameInput?.value.trim();
+  chrome.storage.local.set({ cityName: name }, () => {
+    alert("City name saved!");
+  });
+});
+
+cityNameInput?.addEventListener("blur", () => {
+  const name = cityNameInput.value.trim();
+  chrome.storage.local.set({ cityName: name });
+});
+
+cityNameInput?.addEventListener("input", () => {
+  const name = cityNameInput.value.trim();
+  chrome.storage.local.set({ cityName: name });
+});
+
+cityNameInput?.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    const name = cityNameInput.value.trim();
+    chrome.storage.local.set({ cityName: name }, () => {
+      alert("City name saved!");
+    });
+  }
 });
 
 
@@ -568,23 +612,35 @@ async function sendChat() {
 
 async function fetchGeminiReply(contents) {
   const model = "gemini-3-flash-preview";
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contents }),
-    },
-  );
-  if (!response.ok) {
+  const maxAttempts = 3;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contents }),
+      },
+    );
+    if (response.ok) {
+      const data = await response.json();
+      return (
+        data.candidates?.[0]?.content?.parts?.[0]?.text ||
+        "I could not generate a response."
+      );
+    }
+
     const errorBody = await response.text();
-    throw new Error(errorBody || "Gemini request failed");
+    const isOverloaded =
+      response.status === 503 || errorBody.includes("UNAVAILABLE");
+    if (!isOverloaded || attempt === maxAttempts) {
+      throw new Error(errorBody || "Gemini request failed");
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 400 * attempt));
   }
-  const data = await response.json();
-  return (
-    data.candidates?.[0]?.content?.parts?.[0]?.text ||
-    "I could not generate a response."
-  );
+
+  throw new Error("Gemini request failed");
 }
 
 
@@ -674,6 +730,7 @@ function gainXP(amount) {
   while (xp >= 100) {
     xp -= 100;
     level += 1;
+    buildTokens += 1;
     const city = document.getElementById("city-grid");
     if (city) {
       city.style.transform = "scale(1.02)";
@@ -684,7 +741,8 @@ function gainXP(amount) {
   }
   xpFill.style.width = `${xp}%`;
   updateLevelText();
-  chrome.storage.local.set({ xp, level });
+  updateXpText();
+  chrome.storage.local.set({ xp, level, buildTokens });
   showXpFloat(amount);
 }
 
@@ -708,7 +766,13 @@ function formatDuration(totalSeconds) {
 
 function updateLevelText() {
   if (levelEl) {
-    levelEl.textContent = `Lvl ${level} City`;
+    levelEl.textContent = `Level ${level} City`;
+  }
+}
+
+function updateXpText() {
+  if (xpText) {
+    xpText.textContent = `${xp}/100 XP`;
   }
 }
 

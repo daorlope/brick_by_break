@@ -1,6 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
   // ----- Config -----
   const N = 30; // grid size
+  const SIM_STEP_MS = 500;
   const TILE = {
     empty: 0,
     road: 1,
@@ -36,6 +37,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const dev  = Array.from({length:N}, () => Array(N).fill(0));
 
   let day = 0;
+  let running = false;
+  let timer = null;
+  let lastTick = null;
 
   // cached stats
   let population = 0;
@@ -45,6 +49,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let playerLevel = 1;
   let playerXp = 0;
   let growthBonus = 1;
+  let buildTokens = 0;
 
   // ----- DOM -----
   const canvas = document.getElementById("c");
@@ -55,17 +60,21 @@ document.addEventListener("DOMContentLoaded", () => {
   const ctx = canvas.getContext("2d");
 
   const toolSel = document.getElementById("tool");
+  const runBtn = document.getElementById("run");
   const stepBtn = document.getElementById("step");
   const resetBtn = document.getElementById("reset");
   const unlockNoteEl = document.getElementById("unlock-note");
+  let cityName = "";
 
   const dayEl = document.getElementById("day");
   const popEl = document.getElementById("pop");
+  const buildsLeftEl = document.getElementById("builds-left");
   const jobsEl = document.getElementById("jobs");
   const happyEl = document.getElementById("happy");
   const polluteEl = document.getElementById("pollute");
   const levelEl = document.getElementById("city-level");
   const xpEl = document.getElementById("city-xp");
+  const cityTitleEl = document.getElementById("city-title");
 
   const TOOL_UNLOCKS = {
     road: 1,
@@ -76,6 +85,16 @@ document.addEventListener("DOMContentLoaded", () => {
     plaza: 3,
     school: 5,
     empty: 1,
+  };
+  const TILE_TO_TOOL = {
+    [TILE.road]: "road",
+    [TILE.res]: "res",
+    [TILE.park]: "park",
+    [TILE.plaza]: "plaza",
+    [TILE.com]: "com",
+    [TILE.ind]: "ind",
+    [TILE.school]: "school",
+    [TILE.empty]: "empty",
   };
 
   // ----- Helpers -----
@@ -94,6 +113,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function toolToTile(v){
     return TILE[v] ?? TILE.road;
+  }
+
+  function canPlaceTile(tile){
+    const tool = TILE_TO_TOOL[tile];
+    const requiredLevel = TOOL_UNLOCKS[tool] || 1;
+    return playerLevel >= requiredLevel && buildTokens > 0;
   }
 
   function updateToolOptions(){
@@ -162,9 +187,59 @@ document.addEventListener("DOMContentLoaded", () => {
   function updateUI(){
     dayEl.textContent = String(day);
     popEl.textContent = population.toLocaleString();
+    if (buildsLeftEl) {
+      buildsLeftEl.textContent = String(buildTokens);
+    }
     jobsEl.textContent = jobs.toLocaleString();
     happyEl.textContent = String(Math.max(0, Math.min(100, Math.round(happiness))));
     polluteEl.textContent = String(Math.max(0, Math.round(pollution)));
+    if (cityTitleEl) {
+      cityTitleEl.textContent = cityName || "Mini City Simulator";
+    }
+  }
+
+  function serializeState(){
+    return {
+      grid,
+      dev,
+      day,
+      running,
+      lastTick,
+      cityName,
+    };
+  }
+
+  function saveState(){
+    if (!window.chrome?.storage?.local) return;
+    chrome.storage.local.set({ cityState: serializeState() });
+  }
+
+  function loadState(state){
+    if (!state) return;
+    if (Array.isArray(state.grid) && Array.isArray(state.dev)) {
+      for (let y = 0; y < N; y += 1) {
+        for (let x = 0; x < N; x += 1) {
+          grid[y][x] = state.grid?.[y]?.[x] ?? TILE.empty;
+          dev[y][x] = state.dev?.[y]?.[x] ?? 0;
+        }
+      }
+    }
+    day = Number.isFinite(state.day) ? state.day : 0;
+    running = Boolean(state.running);
+    lastTick = Number.isFinite(state.lastTick) ? state.lastTick : null;
+    if (typeof state.cityName === "string" && state.cityName.trim()) {
+      cityName = state.cityName;
+    }
+  }
+
+  function resumeFromSavedTime(){
+    if (!running || !lastTick) return;
+    const elapsedMs = Date.now() - lastTick;
+    const steps = Math.min(200, Math.floor(elapsedMs / SIM_STEP_MS));
+    for (let i = 0; i < steps; i += 1) {
+      simulateDay();
+    }
+    lastTick = Date.now();
   }
 
   // We'll treat "hasAdjacentRoad" as good enough for activation (simple and fun).
@@ -317,6 +392,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     updateUI();
     draw();
+    saveState();
   }
 
   // ----- Painting -----
@@ -328,8 +404,14 @@ document.addEventListener("DOMContentLoaded", () => {
       const next = tile;
 
       if(prev === next) return;
+      if(!canPlaceTile(next)) return;
 
       grid[y][x] = next;
+      buildTokens = Math.max(0, buildTokens - 1);
+      if (window.chrome?.storage?.local) {
+        chrome.storage.local.set({ buildTokens });
+      }
+      saveState();
 
       if(!isZone(next)) dev[y][x] = 0;
       if(isZone(next) && !isZone(prev)) dev[y][x] = 0;
@@ -371,6 +453,22 @@ document.addEventListener("DOMContentLoaded", () => {
   canvas.addEventListener("mousemove", (e)=>{ if(dragging) handlePaint(e); });
 
   // ----- Controls -----
+  runBtn.addEventListener("click", () => {
+    running = !running;
+    runBtn.textContent = running ? "⏸ Pause" : "▶ Run";
+    if (running) {
+      lastTick = Date.now();
+      timer = setInterval(() => {
+        simulateDay();
+        lastTick = Date.now();
+      }, SIM_STEP_MS);
+    } else if (timer) {
+      clearInterval(timer);
+      timer = null;
+      saveState();
+    }
+  });
+
   stepBtn.addEventListener("click", () => simulateDay());
 
   resetBtn.addEventListener("click", () => {
@@ -381,9 +479,22 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
     day = 0;
+    running = false;
+    lastTick = null;
+    if (timer) {
+      clearInterval(timer);
+      timer = null;
+    }
+    if (runBtn) runBtn.textContent = "▶ Run";
     recomputeStats();
     updateUI();
     draw();
+    saveState();
+  });
+
+  saveCityNameBtn?.addEventListener("click", () => {
+    saveState();
+    updateUI();
   });
 
   function applyPlayerProgress(level, xp){
@@ -392,21 +503,56 @@ document.addEventListener("DOMContentLoaded", () => {
     const xpProgress = Math.min(1, playerXp / 100);
     growthBonus = Math.min(1.6, 1 + playerLevel * 0.03 + xpProgress * 0.05);
     if (levelEl) levelEl.textContent = `City Level ${playerLevel}`;
-    if (xpEl) xpEl.textContent = `XP ${playerXp}/100`;
+    if (xpEl) xpEl.textContent = `XP ${playerXp}`;
     updateToolOptions();
     updateUI();
     draw();
   }
 
   if (window.chrome?.storage?.local) {
-    chrome.storage.local.get(["level", "xp"], (result) => {
+    chrome.storage.local.get(["level", "xp", "buildTokens"], (result) => {
       applyPlayerProgress(result.level || 1, result.xp || 0);
+      if (typeof result.buildTokens === "number") {
+        buildTokens = result.buildTokens;
+        updateUI();
+      }
     });
     chrome.storage.onChanged.addListener((changes) => {
       if (changes.level || changes.xp) {
         const nextLevel = changes.level?.newValue ?? playerLevel;
         const nextXp = changes.xp?.newValue ?? playerXp;
         applyPlayerProgress(nextLevel, nextXp);
+      }
+      if (changes.buildTokens) {
+        buildTokens = changes.buildTokens.newValue || 0;
+        updateUI();
+      }
+      if (changes.cityName) {
+        cityName = changes.cityName.newValue || "";
+        updateUI();
+        saveState();
+      }
+    });
+
+    chrome.storage.local.get(["cityState", "cityName"], (result) => {
+      if (result.cityState) {
+        loadState(result.cityState);
+      }
+      if (typeof result.cityName === "string") {
+        cityName = result.cityName;
+      }
+      saveState();
+      resumeFromSavedTime();
+      updateUI();
+      draw();
+      if (runBtn) {
+        runBtn.textContent = running ? "⏸ Pause" : "▶ Run";
+      }
+      if (running) {
+        timer = setInterval(() => {
+          simulateDay();
+          lastTick = Date.now();
+        }, SIM_STEP_MS);
       }
     });
   }
