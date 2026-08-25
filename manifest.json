@@ -1,14 +1,27 @@
 {
   "manifest_version": 3,
   "name": "Brick By Break",
-  "version": "1.0",
+  "version": "1.1",
+  "description": "A focus timer that turns study time into XP, bricks, and a city you build one session at a time.",
   "permissions": ["storage", "alarms", "notifications"],
   "background": {
     "service_worker": "background.js"
   },
+  "icons": {
+    "16": "brickByBreakLogo.jpg",
+    "32": "brickByBreakLogo.jpg",
+    "48": "brickByBreakLogo.jpg",
+    "128": "brickByBreakLogo.jpg"
+  },
   "action": {
     "default_popup": "popup.html",
-    "default_icon": "brickbyBreakLogo.jpg"
+    "default_title": "Brick By Break",
+    "default_icon": {
+      "16": "brickByBreakLogo.jpg",
+      "32": "brickByBreakLogo.jpg",
+      "48": "brickByBreakLogo.jpg",
+      "128": "brickByBreakLogo.jpg"
+    }
   },
   "host_permissions": [
     "https://*.instructure.com/*",

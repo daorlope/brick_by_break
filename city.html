@@ -1,11 +1,36 @@
-<html>
-    <head>
-        <link rel="stylesheet" href="style.css" />
-    </head>
-    <body>
-        <img src="media/mog.jpg">
-        <audio src="media/mog.mp3#t=00:00:28" autoplay></audio>
-        <br>
-        <a href="popup.html"><button>Back</button></a>
-    </body>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>?</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      body {
+        width: 380px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        padding: 16px;
+      }
+      body img {
+        width: 100%;
+        border-radius: var(--r-lg);
+        border: 1px solid var(--line);
+        display: block;
+      }
+      body a {
+        width: 100%;
+        text-decoration: none;
+      }
+      body a button {
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <img src="media/mog.jpg" alt="" />
+    <audio src="media/mog.mp3#t=00:00:28" autoplay></audio>
+    <a href="popup.html"><button class="ghost-btn">Back</button></a>
+  </body>
 </html>
