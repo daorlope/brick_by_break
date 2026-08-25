@@ -218,44 +218,6 @@ body {
   color: #f8fafc;
 }
 
-.chat-log {
-  background: #0b1220;
-  border: 1px solid #334155;
-  border-radius: 12px;
-  padding: 10px;
-  max-height: 180px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.chat-msg {
-  font-size: 0.75rem;
-  line-height: 1.3;
-  padding: 8px;
-  border-radius: 10px;
-}
-
-.chat-msg.user {
-  background: #1e293b;
-  align-self: flex-end;
-}
-
-.chat-msg.bot {
-  background: #111827;
-  border: 1px solid #334155;
-  align-self: flex-start;
-}
-
-.chat-input-row {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 8px;
-  align-items: center;
-}
-
 #xp-float-container {
   position: absolute;
   right: 12px;

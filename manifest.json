@@ -12,7 +12,6 @@
   },
   "host_permissions": [
     "https://*.instructure.com/*",
-    "https://*.edu/*",
-    "https://generativelanguage.googleapis.com/*"
+    "https://*.edu/*"
   ]
 }

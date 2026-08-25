@@ -13,8 +13,7 @@
     "alarms",
     "notifications",
     "https://*.instructure.com/*",
-    "https://*.edu/*",
-    "https://generativelanguage.googleapis.com/*"
+    "https://*.edu/*"
   ],
   "background": {
     "scripts": ["../background.js"]
