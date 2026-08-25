@@ -40,6 +40,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let running = false;
   let timer = null;
   let lastTick = null;
+  let hover = null;
 
   // cached stats
   let population = 0;
@@ -64,11 +65,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const stepBtn = document.getElementById("step");
   const resetBtn = document.getElementById("reset");
   const unlockNoteEl = document.getElementById("unlock-note");
+  const statusEl = document.getElementById("build-status");
   let cityName = "";
 
   const dayEl = document.getElementById("day");
   const popEl = document.getElementById("pop");
   const buildsLeftEl = document.getElementById("builds-left");
+  const buildsLeftPill = document.getElementById("builds-left-pill");
   const jobsEl = document.getElementById("jobs");
   const happyEl = document.getElementById("happy");
   const polluteEl = document.getElementById("pollute");
@@ -115,10 +118,51 @@ document.addEventListener("DOMContentLoaded", () => {
     return TILE[v] ?? TILE.road;
   }
 
-  function canPlaceTile(tile){
+  const TOOL_LABELS = {
+    road: "Road",
+    res: "Residential",
+    park: "Park",
+    plaza: "Plaza",
+    com: "Commercial",
+    ind: "Industrial",
+    school: "School",
+    empty: "Bulldoze",
+  };
+
+  // Returns null when the tile can be placed, otherwise the reason why not.
+  // Bulldozing is free, so a mis-click never costs a brick to undo.
+  function placementIssue(tile){
     const tool = TILE_TO_TOOL[tile];
     const requiredLevel = TOOL_UNLOCKS[tool] || 1;
-    return playerLevel >= requiredLevel && buildTokens > 0;
+    if (playerLevel < requiredLevel) {
+      return `${TOOL_LABELS[tool] || tool} unlocks at city level ${requiredLevel}`;
+    }
+    if (tile !== TILE.empty && buildTokens <= 0) {
+      return "Out of bricks - finish a focus session to earn more";
+    }
+    return null;
+  }
+
+  function setStatus(text, tone){
+    if (!statusEl) return;
+    statusEl.textContent = text;
+    statusEl.dataset.tone = tone || "";
+  }
+
+  function defaultStatus(){
+    const tool = toolSel ? toolSel.value : "road";
+    if (tool === "empty") {
+      setStatus("Bulldoze is free.", "");
+      return;
+    }
+    if (buildTokens > 0) {
+      setStatus(
+        `${buildTokens} brick${buildTokens === 1 ? "" : "s"} left - 1 brick per tile`,
+        "",
+      );
+    } else {
+      setStatus("Out of bricks - finish a focus session to earn more", "warn");
+    }
   }
 
   function updateToolOptions(){
@@ -182,6 +226,22 @@ document.addEventListener("DOMContentLoaded", () => {
       ctx.beginPath(); ctx.moveTo(i*cell,0); ctx.lineTo(i*cell, N*cell); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(0,i*cell); ctx.lineTo(N*cell, i*cell); ctx.stroke();
     }
+
+    // brush preview under the cursor: white = placeable, red = blocked
+    if(hover && inBounds(hover.cx, hover.cy)){
+      const span = hover.brush3 ? 3 : 1;
+      const off = hover.brush3 ? 1 : 0;
+      ctx.strokeStyle = placementIssue(toolToTile(toolSel.value))
+        ? "rgba(251,113,133,.95)"
+        : "rgba(255,255,255,.85)";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(
+        (hover.cx - off) * cell + 1,
+        (hover.cy - off) * cell + 1,
+        cell * span - 2,
+        cell * span - 2,
+      );
+    }
   }
 
   function updateUI(){
@@ -189,6 +249,9 @@ document.addEventListener("DOMContentLoaded", () => {
     popEl.textContent = population.toLocaleString();
     if (buildsLeftEl) {
       buildsLeftEl.textContent = String(buildTokens);
+    }
+    if (buildsLeftPill) {
+      buildsLeftPill.textContent = `${buildTokens} brick${buildTokens === 1 ? "" : "s"}`;
     }
     jobsEl.textContent = jobs.toLocaleString();
     happyEl.textContent = String(Math.max(0, Math.min(100, Math.round(happiness))));
@@ -397,6 +460,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ----- Painting -----
   function paintCell(cx, cy, tile, brush3=false){
+    let placed = 0;
+    let blocked = null;
+
     const paintOne = (x,y) => {
       if(!inBounds(x,y)) return;
 
@@ -404,14 +470,15 @@ document.addEventListener("DOMContentLoaded", () => {
       const next = tile;
 
       if(prev === next) return;
-      if(!canPlaceTile(next)) return;
+
+      const issue = placementIssue(next);
+      if(issue){ blocked = issue; return; }
 
       grid[y][x] = next;
-      buildTokens = Math.max(0, buildTokens - 1);
-      if (window.chrome?.storage?.local) {
-        chrome.storage.local.set({ buildTokens });
+      placed += 1;
+      if(next !== TILE.empty){
+        buildTokens = Math.max(0, buildTokens - 1);
       }
-      saveState();
 
       if(!isZone(next)) dev[y][x] = 0;
       if(isZone(next) && !isZone(prev)) dev[y][x] = 0;
@@ -425,6 +492,17 @@ document.addEventListener("DOMContentLoaded", () => {
           paintOne(cx+dx, cy+dy);
         }
       }
+    }
+
+    // One write per gesture instead of one per tile.
+    if(placed){
+      if (window.chrome?.storage?.local) {
+        chrome.storage.local.set({ buildTokens });
+      }
+      saveState();
+      defaultStatus();
+    } else if(blocked){
+      setStatus(blocked, "warn");
     }
 
     recomputeStats();
@@ -450,7 +528,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
   canvas.addEventListener("mousedown", (e)=>{ dragging=true; handlePaint(e); });
   window.addEventListener("mouseup", ()=> dragging=false);
-  canvas.addEventListener("mousemove", (e)=>{ if(dragging) handlePaint(e); });
+  canvas.addEventListener("mousemove", (e)=>{
+    const {cx,cy} = getCellFromMouse(e);
+    hover = { cx, cy, brush3: e.shiftKey };
+    if(dragging) handlePaint(e);
+    else draw();
+  });
+  canvas.addEventListener("mouseleave", ()=>{ hover = null; draw(); });
+
+  toolSel?.addEventListener("change", ()=>{ defaultStatus(); draw(); });
+
+  // Number keys 1-8 select a tool, in the same order as the dropdown.
+  const TOOL_KEYS = ["road","res","park","plaza","com","ind","school","empty"];
+  window.addEventListener("keydown", (e)=>{
+    if(e.target instanceof HTMLInputElement) return;
+    const index = Number.parseInt(e.key, 10) - 1;
+    if(Number.isNaN(index) || index < 0 || index >= TOOL_KEYS.length) return;
+    const option = Array.from(toolSel.options).find((o)=> o.value === TOOL_KEYS[index]);
+    if(!option || option.disabled) return;
+    toolSel.value = TOOL_KEYS[index];
+    defaultStatus();
+    draw();
+  });
 
   // ----- Controls -----
   runBtn.addEventListener("click", () => {
@@ -492,11 +591,6 @@ document.addEventListener("DOMContentLoaded", () => {
     saveState();
   });
 
-  saveCityNameBtn?.addEventListener("click", () => {
-    saveState();
-    updateUI();
-  });
-
   function applyPlayerProgress(level, xp){
     playerLevel = Number.isFinite(level) ? level : 1;
     playerXp = Number.isFinite(xp) ? xp : 0;
@@ -516,6 +610,7 @@ document.addEventListener("DOMContentLoaded", () => {
         buildTokens = result.buildTokens;
         updateUI();
       }
+      defaultStatus();
     });
     chrome.storage.onChanged.addListener((changes) => {
       if (changes.level || changes.xp) {
@@ -526,6 +621,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (changes.buildTokens) {
         buildTokens = changes.buildTokens.newValue || 0;
         updateUI();
+        defaultStatus();
       }
       if (changes.cityName) {
         cityName = changes.cityName.newValue || "";
@@ -560,5 +656,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // init
   recomputeStats();
   updateUI();
+  defaultStatus();
   draw();
 });

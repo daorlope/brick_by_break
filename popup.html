@@ -1,7 +1,8 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <title>Brick By Break</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
@@ -9,147 +10,346 @@
       <a href="city.html"><button id="angry-btn"><img src="media/question.png" style="width: 1px; height: 1px;"></button></a>
     </div>
     <div class="app-container">
-      <div class="spirit-zone main-section">
-        <div id="city-grid" class="city-grid" aria-label="City"></div>
+      <header class="app-header">
+        <img class="brand-logo" src="brickByBreakLogo.jpg" alt="" />
+        <div>
+          <div class="brand-name">Brick By Break</div>
+          <div class="brand-sub" id="brand-sub">Focus. Earn bricks. Build.</div>
+        </div>
+      </header>
+
+      <section class="spirit-zone">
+        <canvas
+          id="city-grid"
+          class="city-grid"
+          width="348"
+          height="92"
+          title="Open your city"
+          aria-label="City preview"
+        ></canvas>
         <div class="stats">
-          <span id="level">Level 1 City</span>
+          <div class="stat-line">
+            <span id="level">Level 1 City</span>
+            <span id="build-tokens" class="pill">0 bricks</span>
+          </div>
           <div class="xp-row">
             <div class="xp-bar"><div id="xp-fill"></div></div>
             <span id="xp-text">0/100 XP</span>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div class="top-actions main-section">
-        <button id="settings-btn" class="ghost-btn top-actions-btn">
+      <nav class="tabs" role="tablist" aria-label="Sections">
+        <button
+          class="tab is-active"
+          id="tab-timer"
+          data-tab="timer"
+          role="tab"
+          aria-selected="true"
+          aria-controls="panel-timer"
+        >
+          Timer
+        </button>
+        <button
+          class="tab"
+          id="tab-tasks"
+          data-tab="tasks"
+          role="tab"
+          aria-selected="false"
+          aria-controls="panel-tasks"
+        >
+          Tasks
+        </button>
+        <button
+          class="tab"
+          id="tab-recall"
+          data-tab="recall"
+          role="tab"
+          aria-selected="false"
+          aria-controls="panel-recall"
+        >
+          Recall
+        </button>
+        <button
+          class="tab"
+          id="tab-settings"
+          data-tab="settings"
+          role="tab"
+          aria-selected="false"
+          aria-controls="panel-settings"
+        >
           Settings
         </button>
-        <button id="active-recall-btn" class="ghost-btn top-actions-btn">
-          Active Recall
-        </button>
-        <a href="cit.html">
-          <button id="city-btn" class="ghost-btn top-actions-btn">
-            View City
-          </button>
+      </nav>
+
+      <!-- ============================ TIMER ============================ -->
+      <div
+        class="panel"
+        id="panel-timer"
+        role="tabpanel"
+        aria-labelledby="tab-timer"
+      >
+        <div class="card timer-card">
+          <div id="xp-float-container" aria-hidden="true"></div>
+
+          <div class="session-toggle" role="group" aria-label="Session type">
+            <button class="session-btn is-active" data-session="focus">
+              Focus
+            </button>
+            <button class="session-btn" data-session="short-break">
+              Short break
+            </button>
+            <button class="session-btn" data-session="long-break">
+              Long break
+            </button>
+          </div>
+
+          <div class="timer-ring" id="timer-ring">
+            <div class="timer-ring-inner">
+              <h2 id="timer-display" role="timer" aria-live="off">00:25:00</h2>
+              <div class="timer-caption" id="timer-caption">Focus</div>
+              <div id="pending-xp"></div>
+            </div>
+          </div>
+
+          <div class="timer-actions">
+            <button id="start-btn">Start Focus</button>
+            <button id="restart-btn" class="ghost-btn">Reset</button>
+          </div>
+
+          <div class="cycle-row" title="Focus sessions completed today">
+            <span class="cycle-dot" data-cycle="0"></span>
+            <span class="cycle-dot" data-cycle="1"></span>
+            <span class="cycle-dot" data-cycle="2"></span>
+            <span class="cycle-dot" data-cycle="3"></span>
+            <span class="cycle-label" id="cycle-label">0 today</span>
+          </div>
+
+          <div id="break-prompt" class="break-prompt hidden">
+            <div class="break-title">Break action &middot; +5 XP each</div>
+            <div class="break-success hidden">Great Job!</div>
+            <div class="break-actions">
+              <button class="break-btn" data-action="stretch">Stretch</button>
+              <button class="break-btn" data-action="water">Water</button>
+              <button class="break-btn" data-action="breathe">Breathe</button>
+            </div>
+          </div>
+        </div>
+
+        <a class="link-btn" href="cit.html">
+          <button id="city-btn" class="ghost-btn">Open City Builder &rarr;</button>
         </a>
       </div>
 
-      <div id="settings-page" class="hidden">
-        <button id="back-btn" class="ghost-btn">Back</button>
-        <h3>Settings</h3>
-        <p class="text-xs">
-          Paste your Canvas Access Token:
-          <span class="info-bubble" tabindex="0" aria-label="Token help">
-            i
-            <span class="tooltip">
-              <span class="step">1. Login to Canvas dashboard</span>
-              <span class="step">2. Click on your account</span>
-              <span class="step">3. Click on settings</span>
-              <span class="step">4. Scroll down to Approved Integrations</span>
-              <span class="step">5. Click + New Access Token</span>
-              <span class="step">6. Create a token</span>
-              <span class="step"
-                >7. Copy and paste the token and insert below</span
-              >
+      <!-- ============================ TASKS ============================ -->
+      <div
+        class="panel"
+        id="panel-tasks"
+        role="tabpanel"
+        aria-labelledby="tab-tasks"
+        hidden
+      >
+        <div class="card">
+          <div class="card-head">
+            <h3 class="card-title">Due Soon &middot; Canvas</h3>
+            <button id="refresh-tasks" class="icon-btn">Refresh</button>
+          </div>
+          <div id="task-list">
+            <p class="empty-state">Loading assignments&hellip;</p>
+          </div>
+          <p class="hint" id="task-status"></p>
+        </div>
+      </div>
+
+      <!-- ============================ RECALL =========================== -->
+      <div
+        class="panel"
+        id="panel-recall"
+        role="tabpanel"
+        aria-labelledby="tab-recall"
+        hidden
+      >
+        <div class="card">
+          <div class="card-head">
+            <h3 class="card-title">Active Recall</h3>
+            <button id="chat-clear" class="icon-btn">Clear</button>
+          </div>
+          <div id="chat-log" class="chat-log" aria-live="polite"></div>
+          <div class="chat-input-row">
+            <label class="sr-only" for="chat-input">Message</label>
+            <input
+              type="text"
+              id="chat-input"
+              placeholder="Type your response..."
+              autocomplete="off"
+            />
+            <button id="chat-send">Send</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================== SETTINGS ========================== -->
+      <div
+        class="panel"
+        id="panel-settings"
+        role="tabpanel"
+        aria-labelledby="tab-settings"
+        hidden
+      >
+        <div class="card">
+          <h3 class="card-title">Canvas</h3>
+
+          <div class="field">
+            <label for="canvas-url-input">School Canvas URL</label>
+            <div class="input-row">
+              <input
+                type="text"
+                id="canvas-url-input"
+                placeholder="https://canvas.ucsc.edu"
+                autocomplete="off"
+                spellcheck="false"
+              />
+              <button id="save-canvas-url" class="ghost-btn">Save</button>
+            </div>
+            <p class="hint">The address you use to log in to Canvas.</p>
+          </div>
+
+          <div class="field">
+            <span class="field-label">
+              Access token
+              <span class="info-bubble" tabindex="0" aria-label="Token help">
+                i
+                <span class="tooltip">
+                  <span class="step">1. Log in to your Canvas dashboard</span>
+                  <span class="step">2. Click your account avatar</span>
+                  <span class="step">3. Open Settings</span>
+                  <span class="step">4. Scroll to Approved Integrations</span>
+                  <span class="step">5. Click + New Access Token</span>
+                  <span class="step">6. Create the token</span>
+                  <span class="step">7. Copy it and paste it below</span>
+                </span>
+              </span>
             </span>
-          </span>
-        </p>
-        <input
-          type="password"
-          id="token-input"
-          placeholder="Paste token here..."
-        />
-        <button id="save-token">Save Token</button>
-        <p class="text-xs">Timer length (hh:mm:ss):</p>
-        <div class="timer-inputs">
-          <input
-            type="text"
-            id="timer-hours-input"
-            inputmode="numeric"
-            maxlength="2"
-            placeholder="00"
-          />
-          <input
-            type="text"
-            id="timer-minutes-input"
-            inputmode="numeric"
-            maxlength="2"
-            placeholder="25"
-          />
-          <input
-            type="text"
-            id="timer-seconds-input"
-            inputmode="numeric"
-            maxlength="2"
-            placeholder="00"
-          />
-        </div>
-        <div class="text-xs" id="xp-preview">Potential XP: 0</div>
-        <button id="save-timer">Save Timer</button>
-        <div class="text-xs">
-          Total time worked: <span id="total-worked">00:00:00</span>
-        </div>
-        <p class="text-xs">Gemini API Key:</p>
-        <input
-          type="password"
-          id="gemini-key-input"
-          placeholder="Paste Gemini API key..."
-        />
-        <button id="save-gemini-key">Save Key</button>
-        <p class="text-xs">City name:</p>
-        <input type="text" id="city-name-input" placeholder="My City" />
-        <button id="save-city-name">Save City Name</button>
-      </div>
-
-      <div id="chat-section" class="hidden">
-        <button id="chat-back-btn" class="ghost-btn">Back</button>
-        <div id="chat-log" class="chat-log"></div>
-        <div class="chat-input-row">
-          <input
-            type="text"
-            id="chat-input"
-            placeholder="Type your response..."
-          />
-          <button id="chat-send">Send</button>
-        </div>
-      </div>
-
-      <div class="timer-card main-section">
-        <h2 id="timer-display">00:25:00</h2>
-        <div id="xp-float-container" aria-hidden="true"></div>
-        <div class="session-toggle" role="group" aria-label="Session type">
-          <button class="session-btn is-active" data-session="focus">
-            Focus
-          </button>
-          <button class="session-btn" data-session="short-break">
-            Short break
-          </button>
-          <button class="session-btn" data-session="long-break">
-            Long break
-          </button>
-        </div>
-        <button id="start-btn">Focus Session</button>
-        <button id="restart-btn" class="ghost-btn">Restart Timer</button>
-        <div id="break-prompt" class="break-prompt hidden">
-          <div class="break-title">Break action</div>
-          <div class="break-success hidden">Great Job!</div>
-          <div class="break-actions">
-            <button class="break-btn" data-action="stretch">Stretch</button>
-            <button class="break-btn" data-action="water">Water</button>
-            <button class="break-btn" data-action="breathe">Breathe</button>
+            <div class="secret-row">
+              <label class="sr-only" for="token-input">Canvas access token</label>
+              <input
+                type="password"
+                id="token-input"
+                placeholder="Paste token here..."
+                autocomplete="off"
+              />
+              <button
+                class="ghost-btn reveal-btn"
+                data-reveals="token-input"
+                type="button"
+              >
+                Show
+              </button>
+              <button id="save-token">Save</button>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="canvas-feed main-section">
-        <h3>Due Soon (Canvas)</h3>
-        <div id="task-list">
-          <div class="task-item">
-            <span>Loading assignments...</span>
+        <div class="card">
+          <h3 class="card-title">Focus Timer</h3>
+
+          <div class="field">
+            <span class="field-label">Session length (hh:mm:ss)</span>
+            <div class="timer-inputs">
+              <label class="sr-only" for="timer-hours-input">Hours</label>
+              <input
+                type="text"
+                id="timer-hours-input"
+                inputmode="numeric"
+                maxlength="2"
+                placeholder="00"
+              />
+              <label class="sr-only" for="timer-minutes-input">Minutes</label>
+              <input
+                type="text"
+                id="timer-minutes-input"
+                inputmode="numeric"
+                maxlength="2"
+                placeholder="25"
+              />
+              <label class="sr-only" for="timer-seconds-input">Seconds</label>
+              <input
+                type="text"
+                id="timer-seconds-input"
+                inputmode="numeric"
+                maxlength="2"
+                placeholder="00"
+              />
+            </div>
+            <div class="preset-row">
+              <button class="preset-btn" data-minutes="15">15m</button>
+              <button class="preset-btn" data-minutes="25">25m</button>
+              <button class="preset-btn" data-minutes="45">45m</button>
+              <button class="preset-btn" data-minutes="60">60m</button>
+            </div>
+            <p class="hint" id="xp-preview">Potential XP: 0</p>
+            <button id="save-timer" style="width: 100%; margin-top: 8px">
+              Save Timer
+            </button>
           </div>
+
+          <div class="summary-row">
+            <span>Total time focused</span>
+            <b id="total-worked">00:00:00</b>
+          </div>
+          <div class="summary-row">
+            <span>Sessions completed</span>
+            <b id="total-sessions">0</b>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">City &amp; AI</h3>
+
+          <div class="field">
+            <label for="city-name-input">City name</label>
+            <div class="input-row">
+              <input type="text" id="city-name-input" placeholder="My City" />
+              <button id="save-city-name" class="ghost-btn">Save</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="gemini-key-input">Gemini API key</label>
+            <div class="secret-row">
+              <input
+                type="password"
+                id="gemini-key-input"
+                placeholder="Paste Gemini API key..."
+                autocomplete="off"
+              />
+              <button
+                class="ghost-btn reveal-btn"
+                data-reveals="gemini-key-input"
+                type="button"
+              >
+                Show
+              </button>
+              <button id="save-gemini-key">Save</button>
+            </div>
+            <p class="hint">Powers the Active Recall coach.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">Danger Zone</h3>
+          <button id="reset-progress" class="danger-btn" style="width: 100%">
+            Reset XP, bricks &amp; city
+          </button>
+          <p class="hint">
+            Clears your level, XP, bricks and saved city. Keys and timer
+            settings are kept.
+          </p>
         </div>
       </div>
     </div>
+
+    <div class="toast-stack" id="toast-stack" aria-live="polite"></div>
     <script src="popup.js"></script>
   </body>
 </html>
